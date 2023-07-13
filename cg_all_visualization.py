@@ -1,17 +1,20 @@
-import numpy as np
-import scipy.stats as stats
 import pandas as pd
 import streamlit as st
 import plotly.graph_objs as go
-from plotly.subplots import make_subplots
+import scipy.stats as stats
+from pathlib import Path
 import warnings
-import plotly.express as px
 warnings.filterwarnings("ignore")
 
-req_cols = ["vital_status", "age_at_initial_pathologic_diagnosis", "days_to_death", "gender", "rcc", "stage", "cg05423956", "cg03544320", "cg01541443", "cg00000029", "cg00001583", "cg00004773", "cg00015699", "cg00020794"]
-cg_values = ["cg05423956", "cg03544320", "cg01541443", "cg00000029", "cg00001583", "cg00004773", "cg00015699", "cg00020794"]
-table = pd.read_csv(
-    'C:/Users/abhin/Downloads/kipan_clin_meth_20221210.tsv (1)/kipan_clin_meth_20221210.tsv', sep='\t', usecols=req_cols)
+csv_path = Path(r'C:\Users\abhin\Downloads\kipan_clin_meth_20221210.tsv (1)\kipan_clin_meth_20221210.tsv')
+pickle_path = Path(r'C:\Users\abhin\OneDrive\Documents\GitHub\MeVizPanRCC\processed_data.pk1')
+
+if(pickle_path.is_file() == False or csv_path.stat().st_mtime > pickle_path.stat().st_mtime):
+    table = pd.read_csv(csv_path, sep='\t')
+    table.to_pickle(pickle_path)
+
+table = pd.read_pickle(pickle_path)
+
 col1, col2 = st.columns([1, 3])
 search_pressed = False
 
@@ -27,13 +30,11 @@ with col1:
 
 with col2:
     if search_pressed == True:
-        if cg_value not in cg_values: 
+        if cg_value not in table.columns:
             st.warning('No data found for the provided CG value.')
         else:
-
+            df = table.sort_values(cg_value, ascending=False)
             if stage:
-                df = table.sort_values(cg_value, ascending=False)
-                df.head()
                 s1count = (df['stage'] == 'stage i').sum()
                 s2count = (df['stage'] == 'stage ii').sum()
                 s3count = (df['stage'] == 'stage iii').sum()
@@ -80,8 +81,6 @@ with col2:
                 st.plotly_chart(fig)
 
             if gender:
-                df = table.sort_values(cg_value, ascending=False)
-                df.head()
                 male_rcc_count = ((df['gender'] == 'male') & (df['rcc'] == 'rcc')).sum()
                 male_normal_count = ((df['gender'] == 'male') & (df['rcc'] == 'normal')).sum()
                 female_rcc_count = ((df['gender'] == 'female') & (df['rcc'] == 'rcc')).sum()
@@ -105,9 +104,9 @@ with col2:
                         tickmode='array',
                         tickvals=[0, 1, 2, 3],
                         ticktext=[
-                            "rcc male (N = " + str(male_rcc_count) + ")",
+                            "RCC male (N = " + str(male_rcc_count) + ")",
                             "normal male (N = " + str(male_normal_count) + ")",
-                            "rcc female (N = " + str(female_rcc_count) + ")",
+                            "RCC female (N = " + str(female_rcc_count) + ")",
                             "normal female (N = " + str(female_normal_count) + ")",
                         ],
                     ),
@@ -121,18 +120,18 @@ with col2:
                         family="Arial",
                         size=24
                     ), 
-                    margin=dict(r=20, b=120),       
+                    margin=dict(r=20, b=145, l=20),       
                 )
                 fig.update_xaxes(showline=True, linewidth=2, linecolor='black', mirror=True)
                 fig.update_yaxes(showline=True, linewidth=2, linecolor='black', mirror=True)
-                difference_rcc_male_vs_female = table.loc[(table["gender"] == "male") & (table["rcc"] == "rcc"), cg_value].mean() - \
-                                table.loc[(table["gender"] == "female") & (table["rcc"] == "rcc"), cg_value].mean()
+                difference_rcc_male_vs_female = table.loc[(table["gender"] == "female") & (table["rcc"] == "rcc"), cg_value].mean() - \
+                                table.loc[(table["gender"] == "male") & (table["rcc"] == "rcc"), cg_value].mean()
                 _, p_value_rcc_male_vs_female = stats.mannwhitneyu(
                     table.loc[(table["gender"] == "male") & (table["rcc"] == "rcc"), cg_value],
                     table.loc[(table["gender"] == "female") & (table["rcc"] == "rcc"), cg_value]
                 )
-                difference_normal_male_vs_female = table.loc[(table["gender"] == "male") & (table["rcc"] == "normal"), cg_value].mean() - \
-                                table.loc[(table["gender"] == "female") & (table["rcc"] == "normal"), cg_value].mean()
+                difference_normal_male_vs_female = table.loc[(table["gender"] == "female") & (table["rcc"] == "normal"), cg_value].mean() - \
+                                table.loc[(table["gender"] == "male") & (table["rcc"] == "normal"), cg_value].mean()
                 _, p_value_normal_male_vs_female = stats.mannwhitneyu(
                     table.loc[(table["gender"] == "male") & (table["rcc"] == "normal"), cg_value],
                     table.loc[(table["gender"] == "female") & (table["rcc"] == "normal"), cg_value]
@@ -151,97 +150,97 @@ with col2:
                     table.loc[(table["gender"] == "female") & (table["rcc"] == "rcc"), cg_value]
                 )
                 fig.add_annotation(
-                    x=0.28,
-                    y=-0.2,
-                    xref='paper',
-                    yref='paper',
-                    text=f'rcc mean difference: {difference_rcc_male_vs_female:.4f}',
-                    showarrow=False,
-                    font=dict(size=12),
-                    align='center',
-                    xanchor='center',
-                    yanchor='top'
-                )
-                fig.add_annotation(
-                    x=0.7,
-                    y=-0.2,
-                    xref='paper',
-                    yref='paper',
-                    text=f'rcc p-value: {p_value_rcc_male_vs_female:.4e}',
-                    showarrow=False,
-                    font=dict(size=12),
-                    align='center',
-                    xanchor='center',
-                    yanchor='top'
-                )
-                fig.add_annotation(
-                    x=0.28,
-                    y=-0.25,
-                    xref='paper',
-                    yref='paper',
-                    text=f'normal mean difference: {difference_normal_male_vs_female:.4f}',
-                    showarrow=False,
-                    font=dict(size=12),
-                    align='center',
-                    xanchor='center',
-                    yanchor='top'
-                )
-                fig.add_annotation(
-                    x=0.7,
-                    y=-0.25,
-                    xref='paper',
-                    yref='paper',
-                    text=f'normal p-value: {p_value_normal_male_vs_female:.4e}',
-                    showarrow=False,
-                    font=dict(size=12),
-                    align='center',
-                    xanchor='center',
-                    yanchor='top'
-                )
-                fig.add_annotation(
-                    x=0.28,
+                    x=0.201,
                     y=-0.3,
                     xref='paper',
                     yref='paper',
-                    text=f'male mean difference: {difference_male_vs_normal:.4f}',
+                    text=f'mean difference of RCC female and RCC male: {difference_rcc_male_vs_female:.4f}',
                     showarrow=False,
-                    font=dict(size=12),
+                    font=dict(size=13),
                     align='center',
                     xanchor='center',
                     yanchor='top'
                 )
                 fig.add_annotation(
-                    x=0.7,
+                    x=0.748,
                     y=-0.3,
                     xref='paper',
                     yref='paper',
-                    text=f'male p-value: {p_value_male_vs_normal:.4e}',
+                    text=f'p-value of RCC female and RCC male: {p_value_rcc_male_vs_female:.4e}',
                     showarrow=False,
-                    font=dict(size=12),
+                    font=dict(size=13),
                     align='center',
                     xanchor='center',
                     yanchor='top'
                 )
                 fig.add_annotation(
-                    x=0.28,
-                    y=-0.35,
+                    x=0.218,
+                    y=-0.4,
                     xref='paper',
                     yref='paper',
-                    text=f'female mean difference: {difference_female_vs_normal:.4f}',
+                    text=f'mean difference of normal female and normal male: {difference_normal_male_vs_female:.4f}',
                     showarrow=False,
-                    font=dict(size=12),
+                    font=dict(size=13),
                     align='center',
                     xanchor='center',
                     yanchor='top'
                 )
                 fig.add_annotation(
-                    x=0.7,
-                    y=-0.35,
+                    x=0.7629,
+                    y=-0.4,
                     xref='paper',
                     yref='paper',
-                    text=f'female p-value: {p_value_female_vs_normal:.4e}',
+                    text=f'p-value of normal female and normal male: {p_value_normal_male_vs_female:.4e}',
                     showarrow=False,
-                    font=dict(size=12),
+                    font=dict(size=13),
+                    align='center',
+                    xanchor='center',
+                    yanchor='top'
+                )
+                fig.add_annotation(
+                    x=0.205,
+                    y=-0.5,
+                    xref='paper',
+                    yref='paper',
+                    text=f'mean difference of RCC male and normal male: {difference_male_vs_normal:.4f}',
+                    showarrow=False,
+                    font=dict(size=13),
+                    align='center',
+                    xanchor='center',
+                    yanchor='top'
+                )
+                fig.add_annotation(
+                    x=0.748,
+                    y=-0.5,
+                    xref='paper',
+                    yref='paper',
+                    text=f'p-value of RCC male and normal male: {p_value_male_vs_normal:.4e}',
+                    showarrow=False,
+                    font=dict(size=13),
+                    align='center',
+                    xanchor='center',
+                    yanchor='top'
+                )
+                fig.add_annotation(
+                    x=0.22,
+                    y=-0.6,
+                    xref='paper',
+                    yref='paper',
+                    text=f'mean difference of RCC female and normal female: {difference_female_vs_normal:.4f}',
+                    showarrow=False,
+                    font=dict(size=13),
+                    align='center',
+                    xanchor='center',
+                    yanchor='top'
+                )
+                fig.add_annotation(
+                    x=0.7617,
+                    y=-0.6,
+                    xref='paper',
+                    yref='paper',
+                    text=f'p-value of RCC female and normal female: {p_value_female_vs_normal:.4e}',
+                    showarrow=False,
+                    font=dict(size=13),
                     align='center',
                     xanchor='center',
                     yanchor='top'
@@ -249,166 +248,194 @@ with col2:
                 st.plotly_chart(fig)
 
             if age:
-                df = table.sort_values(cg_value, ascending=False)
-                df.head()
-                under55_rcc_count = ((df['age_at_initial_pathologic_diagnosis'] <= 55) & (df['rcc'] == 'rcc')).sum()
-                under55_normal_count = ((df['age_at_initial_pathologic_diagnosis'] <= 55) & (df['rcc'] == 'normal')).sum()
-                over55_rcc_count = ((df['age_at_initial_pathologic_diagnosis'] > 55) & (df['rcc'] == 'rcc')).sum()
-                over55_normal_count = ((df['age_at_initial_pathologic_diagnosis'] > 55) & (df['rcc'] == 'normal')).sum()
+                under20_rcc_count = (((df['age_at_initial_pathologic_diagnosis'] >= 0) & (df['age_at_initial_pathologic_diagnosis'] < 20)) & (df['rcc'] == 'rcc')).sum()
+                under20_normal_count = (((df['age_at_initial_pathologic_diagnosis'] >= 0) & (df['age_at_initial_pathologic_diagnosis'] < 20)) & (df['rcc'] == 'normal')).sum()
+                under30_rcc_count = (((df['age_at_initial_pathologic_diagnosis'] >= 20) & (df['age_at_initial_pathologic_diagnosis'] < 30)) & (df['rcc'] == 'rcc')).sum()
+                under30_normal_count = (((df['age_at_initial_pathologic_diagnosis'] >= 20) & (df['age_at_initial_pathologic_diagnosis'] < 30)) & (df['rcc'] == 'normal')).sum()
+                under40_rcc_count = (((df['age_at_initial_pathologic_diagnosis'] >= 30) & (df['age_at_initial_pathologic_diagnosis'] < 40)) & (df['rcc'] == 'rcc')).sum()
+                under40_normal_count = (((df['age_at_initial_pathologic_diagnosis'] >= 30) & (df['age_at_initial_pathologic_diagnosis'] < 40)) & (df['rcc'] == 'normal')).sum()
+                under50_rcc_count = (((df['age_at_initial_pathologic_diagnosis'] >= 40) &( df['age_at_initial_pathologic_diagnosis'] < 50)) & (df['rcc'] == 'rcc')).sum()
+                under50_normal_count = (((df['age_at_initial_pathologic_diagnosis'] >= 40) & (df['age_at_initial_pathologic_diagnosis'] < 50)) & (df['rcc'] == 'normal')).sum()
+                under60_rcc_count = (((df['age_at_initial_pathologic_diagnosis'] >= 50) & (df['age_at_initial_pathologic_diagnosis'] < 60)) & (df['rcc'] == 'rcc')).sum()
+                under60_normal_count = (((df['age_at_initial_pathologic_diagnosis'] >= 50) & (df['age_at_initial_pathologic_diagnosis'] < 60)) & (df['rcc'] == 'normal')).sum()
+                under70_rcc_count = (((df['age_at_initial_pathologic_diagnosis'] >= 60) & (df['age_at_initial_pathologic_diagnosis'] < 70)) & (df['rcc'] == 'rcc')).sum()
+                under70_normal_count = (((df['age_at_initial_pathologic_diagnosis'] >= 60) & (df['age_at_initial_pathologic_diagnosis'] < 70)) & (df['rcc'] == 'normal')).sum()
+                under80_rcc_count = (((df['age_at_initial_pathologic_diagnosis'] >= 70) & (df['age_at_initial_pathologic_diagnosis'] < 80)) & (df['rcc'] == 'rcc')).sum()
+                under80_normal_count = (((df['age_at_initial_pathologic_diagnosis'] >= 70) & (df['age_at_initial_pathologic_diagnosis'] < 80)) & (df['rcc'] == 'normal')).sum()
+                under90_rcc_count = (((df['age_at_initial_pathologic_diagnosis'] >= 80) & (df['age_at_initial_pathologic_diagnosis'] < 90)) & (df['rcc'] == 'rcc')).sum()
+                under90_normal_count = (((df['age_at_initial_pathologic_diagnosis'] >= 80) & (df['age_at_initial_pathologic_diagnosis'] < 90)) & (df['rcc'] == 'normal')).sum()
+                under100_rcc_count = (((df['age_at_initial_pathologic_diagnosis'] >= 90) & (df['age_at_initial_pathologic_diagnosis'] < 100)) & (df['rcc'] == 'rcc')).sum()
+                under100_normal_count = (((df['age_at_initial_pathologic_diagnosis'] >= 90) & (df['age_at_initial_pathologic_diagnosis'] < 100)) & (df['rcc'] == 'normal')).sum()
                 fig = go.Figure()
-                fig.add_trace(go.Box(y=df[(df['age_at_initial_pathologic_diagnosis'] <= 55) & (df['rcc'] == 'rcc')][cg_value],
-                                    x=[0]*under55_rcc_count, boxpoints="all", jitter=0.2, marker=dict(color="cyan"), showlegend=False))
-                fig.add_trace(go.Box(y=df[(df['age_at_initial_pathologic_diagnosis'] <= 55) & (df['rcc'] == 'normal')][cg_value],
-                                    x=[1]*under55_normal_count, boxpoints="all", jitter=0.2, marker=dict(color="mediumpurple"), showlegend=False))
-                fig.add_trace(go.Box(y=df[(df['age_at_initial_pathologic_diagnosis'] > 55) & (df['rcc'] == 'rcc')][cg_value],
-                                    x=[2]*over55_rcc_count, boxpoints="all", jitter=0.2, marker=dict(color="cyan"), showlegend=False))
-                fig.add_trace(go.Box(y=df[(df['age_at_initial_pathologic_diagnosis'] > 55) & (df['rcc'] == 'normal')][cg_value],
-                                    x=[3]*over55_normal_count, boxpoints="all", jitter=0.2, marker=dict(color="mediumpurple"), showlegend=False))
+                fig.add_trace(go.Box(y=df[((df['age_at_initial_pathologic_diagnosis'] >= 0) & (df['age_at_initial_pathologic_diagnosis'] < 20)) & (df['rcc'] == 'rcc')][cg_value], x=[0]*under20_rcc_count, boxpoints="all", jitter=0.2, marker=dict(color="cyan"), showlegend=False))
+                fig.add_trace(go.Box(y=df[((df['age_at_initial_pathologic_diagnosis'] >= 0) & (df['age_at_initial_pathologic_diagnosis'] < 20)) & (df['rcc'] == 'normal')][cg_value], x=[1]*under20_normal_count, boxpoints="all", jitter=0.2, marker=dict(color="purple"), showlegend=False))
+                fig.add_trace(go.Box(y=df[((df['age_at_initial_pathologic_diagnosis'] >= 20) & (df['age_at_initial_pathologic_diagnosis'] < 30)) & (df['rcc'] == 'rcc')][cg_value], x=[2]*under30_rcc_count, boxpoints="all", jitter=0.2, marker=dict(color="cyan"), showlegend=False))
+                fig.add_trace(go.Box(y=df[((df['age_at_initial_pathologic_diagnosis'] >= 20) & (df['age_at_initial_pathologic_diagnosis'] < 30)) & (df['rcc'] == 'normal')][cg_value], x=[3]*under30_normal_count, boxpoints="all", jitter=0.2, marker=dict(color="purple"), showlegend=False))
+                fig.add_trace(go.Box(y=df[((df['age_at_initial_pathologic_diagnosis'] >= 30) & (df['age_at_initial_pathologic_diagnosis'] < 40)) & (df['rcc'] == 'rcc')][cg_value], x=[4]*under40_rcc_count, boxpoints="all", jitter=0.2, marker=dict(color="cyan"), showlegend=False))
+                fig.add_trace(go.Box(y=df[((df['age_at_initial_pathologic_diagnosis'] >= 30) & (df['age_at_initial_pathologic_diagnosis'] < 40)) & (df['rcc'] == 'normal')][cg_value], x=[5]*under40_normal_count, boxpoints="all", jitter=0.2, marker=dict(color="purple"), showlegend=False))
+                fig.add_trace(go.Box(y=df[((df['age_at_initial_pathologic_diagnosis'] >= 40) & (df['age_at_initial_pathologic_diagnosis'] < 50)) & (df['rcc'] == 'rcc')][cg_value], x=[6]*under50_rcc_count, boxpoints="all", jitter=0.2, marker=dict(color="cyan"), showlegend=False))
+                fig.add_trace(go.Box(y=df[((df['age_at_initial_pathologic_diagnosis'] >= 40) & (df['age_at_initial_pathologic_diagnosis'] < 50)) & (df['rcc'] == 'normal')][cg_value], x=[7]*under50_normal_count, boxpoints="all", jitter=0.2, marker=dict(color="purple"), showlegend=False))
+                fig.add_trace(go.Box(y=df[((df['age_at_initial_pathologic_diagnosis'] >= 50) & (df['age_at_initial_pathologic_diagnosis'] < 60)) & (df['rcc'] == 'rcc')][cg_value], x=[8]*under60_rcc_count, boxpoints="all", jitter=0.2, marker=dict(color="cyan"), showlegend=False))
+                fig.add_trace(go.Box(y=df[((df['age_at_initial_pathologic_diagnosis'] >= 50) & (df['age_at_initial_pathologic_diagnosis'] < 60)) & (df['rcc'] == 'normal')][cg_value], x=[9]*under60_normal_count, boxpoints="all", jitter=0.2, marker=dict(color="purple"), showlegend=False))
+                fig.add_trace(go.Box(y=df[((df['age_at_initial_pathologic_diagnosis'] >= 60) & (df['age_at_initial_pathologic_diagnosis'] < 70)) & (df['rcc'] == 'rcc')][cg_value], x=[10]*under70_rcc_count, boxpoints="all", jitter=0.2, marker=dict(color="cyan"), showlegend=False))
+                fig.add_trace(go.Box(y=df[((df['age_at_initial_pathologic_diagnosis'] >= 60) & (df['age_at_initial_pathologic_diagnosis'] < 70)) & (df['rcc'] == 'normal')][cg_value], x=[11]*under70_normal_count, boxpoints="all", jitter=0.2, marker=dict(color="purple"), showlegend=False))
+                fig.add_trace(go.Box(y=df[((df['age_at_initial_pathologic_diagnosis'] >= 70) & (df['age_at_initial_pathologic_diagnosis'] < 80)) & (df['rcc'] == 'rcc')][cg_value], x=[12]*under80_rcc_count, boxpoints="all", jitter=0.2, marker=dict(color="cyan"), showlegend=False))
+                fig.add_trace(go.Box(y=df[((df['age_at_initial_pathologic_diagnosis'] >= 70) & (df['age_at_initial_pathologic_diagnosis'] < 80)) & (df['rcc'] == 'normal')][cg_value], x=[13]*under80_normal_count, boxpoints="all", jitter=0.2, marker=dict(color="purple"), showlegend=False))
+                fig.add_trace(go.Box(y=df[((df['age_at_initial_pathologic_diagnosis'] >= 80) & (df['age_at_initial_pathologic_diagnosis'] < 90)) & (df['rcc'] == 'rcc')][cg_value], x=[14]*under90_rcc_count, boxpoints="all", jitter=0.2, marker=dict(color="cyan"), showlegend=False))
+                fig.add_trace(go.Box(y=df[((df['age_at_initial_pathologic_diagnosis'] >= 80) & (df['age_at_initial_pathologic_diagnosis'] < 90)) & (df['rcc'] == 'normal')][cg_value], x=[15]*under90_normal_count, boxpoints="all", jitter=0.2, marker=dict(color="purple"), showlegend=False))
+                fig.add_trace(go.Box(y=df[((df['age_at_initial_pathologic_diagnosis'] >= 90) & (df['age_at_initial_pathologic_diagnosis'] < 100)) & (df['rcc'] == 'rcc')][cg_value], x=[16]*under100_rcc_count, boxpoints="all", jitter=0.2, marker=dict(color="cyan"), showlegend=False))
+                fig.add_trace(go.Box(y=df[((df['age_at_initial_pathologic_diagnosis'] >= 90) & (df['age_at_initial_pathologic_diagnosis'] < 100)) & (df['rcc'] == 'normal')][cg_value], x=[17]*under100_normal_count, boxpoints="all", jitter=0.2, marker=dict(color="purple"), showlegend=False))
                 fig.update_layout(
                     title='age plot of ' + str(cg_value),
-                    xaxis=dict(
-                        tickmode='array',
-                        tickvals=[0, 1, 2, 3],
-                        ticktext=[
-                            "<=55 rcc (N = " + str(under55_rcc_count) + ")",
-                            "<=55 normal (N = " + str(under55_normal_count) + ")",
-                            ">55 rcc (N = " + str(over55_rcc_count) + ")",
-                            ">55 normal (N = " + str(over55_normal_count) + ")",
-                        ]
-                    ),
-                    yaxis=dict(
-                        tickmode='linear',
-                        dtick=0.1,
-                        showgrid = False
-                    ),
-                    plot_bgcolor='rgba(0, 0, 0, 0)',
-                    font=dict(
-                        family="Arial",
-                        size=24
-                    ),
-                    margin=dict(r=20, b=120),
-                )
+                        xaxis=dict(
+                            tickmode='array',
+                            tickvals=[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17],
+                            ticktext=[
+                                "<20 RCC (N = " + str(under20_rcc_count) + ")",
+                                "<20 normal (N = " + str(under20_normal_count) + ")",
+                                "<30 RCC (N = " + str(under30_rcc_count) + ")",
+                                "<30 normal (N = " + str(under30_normal_count) + ")",
+                                "<40 RCC (N = " + str(under40_rcc_count) + ")",
+                                "<40 normal (N = " + str(under40_normal_count) + ")",
+                                "<50 RCC (N = " + str(under50_rcc_count) + ")",
+                                "<50 normal (N = " + str(under50_normal_count) + ")",
+                                "<60 RCC (N = " + str(under60_rcc_count) + ")",
+                                "<60 normal (N = " + str(under60_normal_count) + ")",
+                                "<70 RCC (N = " + str(under70_rcc_count) + ")",
+                                "<70 normal (N = " + str(under70_normal_count) + ")",
+                                "<80 RCC (N = " + str(under80_rcc_count) + ")",
+                                "<80 normal (N = " + str(under80_normal_count) + ")",
+                                "<90 RCC (N = " + str(under90_rcc_count) + ")",
+                                "<90 normal (N = " + str(under90_normal_count) + ")",
+                                "<100 RCC (N = " + str(under100_rcc_count) + ")",
+                                "<100 normal (N = " + str(under100_normal_count) + ")",
+                            ]
+                        ),
+                        yaxis=dict(
+                            tickmode='linear',
+                            dtick=0.1,
+                            showgrid = False
+                        ),
+                        plot_bgcolor='rgba(0, 0, 0, 0)',
+                        font=dict(
+                            family="Arial",
+                            size=24
+                        ),
+                        margin=dict(r=20, b=168),
+                        )
                 fig.update_xaxes(showline=True, linewidth=2, linecolor='black', mirror=True)
                 fig.update_yaxes(showline=True, linewidth=2, linecolor='black', mirror=True)
                 fig.update_xaxes(
                     categoryorder='category ascending'
                 )
-                difference_rcc_age = table.loc[(table["age_at_initial_pathologic_diagnosis"] <= 55) & (table["rcc"] == "rcc"), cg_value].mean() - \
-                                table.loc[(table["age_at_initial_pathologic_diagnosis"] > 55) & (table["rcc"] == "rcc"), cg_value].mean()
-                _, p_value_rcc_age = stats.mannwhitneyu(
-                    table.loc[(table["age_at_initial_pathologic_diagnosis"] <= 55) & (table["rcc"] == "rcc"), cg_value],
-                    table.loc[(table["age_at_initial_pathologic_diagnosis"] > 55) & (table["rcc"] == "rcc"), cg_value]
+                _, p_value_under40 = stats.mannwhitneyu(
+                table.loc[((table["age_at_initial_pathologic_diagnosis"] >= 30) & (table["age_at_initial_pathologic_diagnosis"] < 40)) & (table["rcc"] == "rcc"), cg_value],
+                table.loc[((table["age_at_initial_pathologic_diagnosis"] >= 30) & (table["age_at_initial_pathologic_diagnosis"] < 40)) & (table["rcc"] == "normal"), cg_value]
                 )
-                difference_normal_age = table.loc[(table["age_at_initial_pathologic_diagnosis"] <= 55) & (table["rcc"] == "normal"), cg_value].mean() - \
-                                table.loc[(table["age_at_initial_pathologic_diagnosis"] > 55) & (table["rcc"] == "normal"), cg_value].mean()
-                _, p_value_normal_age = stats.mannwhitneyu(
-                    table.loc[(table["age_at_initial_pathologic_diagnosis"] <= 55) & (table["rcc"] == "normal"), cg_value],
-                    table.loc[(table["age_at_initial_pathologic_diagnosis"] > 55) & (table["rcc"] == "normal"), cg_value]
+                _, p_value_under50 = stats.mannwhitneyu(
+                table.loc[((table["age_at_initial_pathologic_diagnosis"] >= 40) & (table["age_at_initial_pathologic_diagnosis"] < 50)) & (table["rcc"] == "rcc"), cg_value],
+                table.loc[((table["age_at_initial_pathologic_diagnosis"] >= 40) & (table["age_at_initial_pathologic_diagnosis"] < 50)) & (table["rcc"] == "normal"), cg_value]
                 )
-                difference_under55 = table.loc[(table["age_at_initial_pathologic_diagnosis"] <= 55) & (table["rcc"] == "normal"), cg_value].mean() - \
-                                            table.loc[(table["age_at_initial_pathologic_diagnosis"] <= 55) & (table["rcc"] == "rcc"), cg_value].mean()
-                _, p_value_under55 = stats.mannwhitneyu(
-                    table.loc[(table["age_at_initial_pathologic_diagnosis"] <= 55) & (table["rcc"] == "normal"), cg_value],
-                    table.loc[(table["age_at_initial_pathologic_diagnosis"] <= 55) & (table["rcc"] == "rcc"), cg_value]
+                _, p_value_under60 = stats.mannwhitneyu(
+                table.loc[((table["age_at_initial_pathologic_diagnosis"] >= 50) & (table["age_at_initial_pathologic_diagnosis"] < 60)) & (table["rcc"] == "rcc"), cg_value],
+                table.loc[((table["age_at_initial_pathologic_diagnosis"] >= 50) & (table["age_at_initial_pathologic_diagnosis"] < 60)) & (table["rcc"] == "normal"), cg_value]
                 )
-
-                difference_over55 = table.loc[(table["age_at_initial_pathologic_diagnosis"] > 55) & (table["rcc"] == "normal"), cg_value].mean() - \
-                                            table.loc[(table["age_at_initial_pathologic_diagnosis"] > 55) & (table["rcc"] == "rcc"), cg_value].mean()
-                _, p_value_over55 = stats.mannwhitneyu(
-                    table.loc[(table["age_at_initial_pathologic_diagnosis"] > 55) & (table["rcc"] == "normal"), cg_value],
-                    table.loc[(table["age_at_initial_pathologic_diagnosis"] > 55) & (table["rcc"] == "rcc"), cg_value])
+                _, p_value_under70 = stats.mannwhitneyu(
+                table.loc[((table["age_at_initial_pathologic_diagnosis"] >= 60) & (table["age_at_initial_pathologic_diagnosis"] < 70)) & (table["rcc"] == "rcc"), cg_value],
+                table.loc[((table["age_at_initial_pathologic_diagnosis"] >= 60) & (table["age_at_initial_pathologic_diagnosis"] < 70)) & (table["rcc"] == "normal"), cg_value]
+                )
+                _, p_value_under80 = stats.mannwhitneyu(
+                table.loc[((table["age_at_initial_pathologic_diagnosis"] >= 70) & (table["age_at_initial_pathologic_diagnosis"] < 80)) & (table["rcc"] == "rcc"), cg_value],
+                table.loc[((table["age_at_initial_pathologic_diagnosis"] >= 70) & (table["age_at_initial_pathologic_diagnosis"] < 80)) & (table["rcc"] == "normal"), cg_value]
+                )
+                _, p_value_under90 = stats.mannwhitneyu(
+                table.loc[((table["age_at_initial_pathologic_diagnosis"] >= 80) & (table["age_at_initial_pathologic_diagnosis"] < 90)) & (table["rcc"] == "rcc"), cg_value],
+                table.loc[((table["age_at_initial_pathologic_diagnosis"] >= 80) & (table["age_at_initial_pathologic_diagnosis"] < 90)) & (table["rcc"] == "normal"), cg_value]
+                )
+                _, p_value_under100 = stats.mannwhitneyu(
+                table.loc[((table["age_at_initial_pathologic_diagnosis"] >= 90) & (table["age_at_initial_pathologic_diagnosis"] < 100)) & (table["rcc"] == "rcc"), cg_value],
+                table.loc[((table["age_at_initial_pathologic_diagnosis"] >= 90) & (table["age_at_initial_pathologic_diagnosis"] < 100)) & (table["rcc"] == "normal"), cg_value]
+                )
                 fig.add_annotation(
-                    x=0.28,
-                    y=-0.2,
+                    x=0.18,
+                    y=-0.5,
                     xref='paper',
                     yref='paper',
-                    text=f'rcc mean difference: {difference_rcc_age:.4f}',
+                    text=f'p-value under 40 (RCC vs normal): {p_value_under40:.4f}',
                     showarrow=False,
-                    font=dict(size=12),
+                    font=dict(size=13),
                     align='center',
                     xanchor='center',
                     yanchor='top'
                 )
                 fig.add_annotation(
-                    x=0.7,
-                    y=-0.2,
+                    x=0.20,
+                    y=-0.6,
                     xref='paper',
                     yref='paper',
-                    text=f'rcc p-value: {p_value_rcc_age:.4e}',
+                    text=f'p-value under 50 (RCC vs normal): {p_value_under50:.4e}',
                     showarrow=False,
-                    font=dict(size=12),
+                    font=dict(size=13),
                     align='center',
                     xanchor='center',
                     yanchor='top'
                 )
                 fig.add_annotation(
-                    x=0.28,
-                    y=-0.25,
+                    x=0.2,
+                    y=-0.7,
                     xref='paper',
                     yref='paper',
-                    text=f'normal mean difference: {difference_normal_age:.4f}',
+                    text=f'p-value under 60 (RCC vs normal): {p_value_under60:.4e}',
                     showarrow=False,
-                    font=dict(size=12),
+                    font=dict(size=13),
                     align='center',
                     xanchor='center',
                     yanchor='top'
                 )
                 fig.add_annotation(
-                    x=0.7,
-                    y=-0.25,
+                    x=0.20,
+                    y=-0.8,
                     xref='paper',
                     yref='paper',
-                    text=f'normal p-value: {p_value_normal_age:.4e}',
+                    text=f'p-value under 70 (RCC vs normal): {p_value_under70:.4e}',
                     showarrow=False,
-                    font=dict(size=12),
+                    font=dict(size=13),
                     align='center',
                     xanchor='center',
                     yanchor='top'
                 )
                 fig.add_annotation(
-                    x=0.28,
-                    y=-0.3,
+                    x=0.75,
+                    y=-0.5,
                     xref='paper',
                     yref='paper',
-                    text=f'under 55 mean difference: {difference_under55:.4f}',
+                    text=f'p-value under 80 (RCC vs normal): {p_value_under80:.4e}',
                     showarrow=False,
-                    font=dict(size=12),
+                    font=dict(size=13),
                     align='center',
                     xanchor='center',
                     yanchor='top'
                 )
                 fig.add_annotation(
-                    x=0.7,
-                    y=-0.3,
+                    x=0.75,
+                    y=-0.6,
                     xref='paper',
                     yref='paper',
-                    text=f'under 55 p-value: {p_value_under55:.4e}',
+                    text=f'p-value under 90 (RCC vs normal): {p_value_under90:.4e}',
                     showarrow=False,
-                    font=dict(size=12),
+                    font=dict(size=13),
                     align='center',
                     xanchor='center',
                     yanchor='top'
                 )
                 fig.add_annotation(
-                    x=0.28,
-                    y=-0.35,
+                    x=0.76,
+                    y=-0.7,
                     xref='paper',
                     yref='paper',
-                    text=f'over 55 mean difference: {difference_over55:.4f}',
+                    text=f'p-value under 100 (RCC vs normal): {p_value_under100:.4e}',
                     showarrow=False,
-                    font=dict(size=12),
-                    align='center',
-                    xanchor='center',
-                    yanchor='top'
-                )
-                fig.add_annotation(
-                    x=0.7,
-                    y=-0.35,
-                    xref='paper',
-                    yref='paper',
-                    text=f'over 55 p-value: {p_value_over55:.4e}',
-                    showarrow=False,
-                    font=dict(size=12),
+                    font=dict(size=13),
                     align='center',
                     xanchor='center',
                     yanchor='top'
@@ -416,8 +443,6 @@ with col2:
                 st.plotly_chart(fig)
 
             if lts:
-                df = table.sort_values(cg_value, ascending=False)
-                df.head()
                 undercount = (df['days_to_death'] <= 1825 ).sum()
                 overcount = (df['days_to_death'] > 1825).sum()
                 fig = go.Figure()
@@ -463,7 +488,7 @@ with col2:
                     yref='paper',
                     text=f'Mean difference: {difference:.4f}',
                     showarrow=False,
-                    font=dict(size=12),
+                    font=dict(size=13),
                     align='center',
                     xanchor='center',
                     yanchor='top'
@@ -475,7 +500,7 @@ with col2:
                     yref='paper',
                     text=f'p-value: {p_value:.4e}',
                     showarrow=False,
-                    font=dict(size=12),
+                    font=dict(size=13),
                     align='center',
                     xanchor='center',
                     yanchor='top'
