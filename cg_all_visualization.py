@@ -72,6 +72,10 @@ with col2:
                 fig.update_layout(
                     title='stage plot of ' + str(cg_value),
                     title_font=dict(size=30),
+                    yaxis_title='methylation ratio',
+                    yaxis_title_font=dict(size=22),
+                    xaxis_title='stage',
+                    xaxis_title_font=dict(size=22),
                     xaxis=dict(
                         tickmode='array',
                         tickvals=[0, 1, 2, 3, 4],
@@ -82,19 +86,24 @@ with col2:
                             "stage iii (N = " + str(s3count) + ")",
                             "stage iv (N = " + str(s4count) + ")"
                         ],
-                        tickfont=dict(size=18)
+                        tickfont=dict(size=19)
                     ),
+                    font=dict(
+                        family="Arial",
+                        size=24
+                    ), 
                     yaxis=dict(
                         tickmode='linear',
                         dtick=0.1,
                         showgrid = False,
-                        tickfont=dict(size=18)
+                        tickfont=dict(size=22)
                     ),
                     plot_bgcolor='rgba(0, 0, 0, 0)',
                     margin=dict(r=20),
                     height=600,
                     width=1000
                 )
+                fig.update_layout(yaxis_range=[0,1.0])
                 fig.update_xaxes(showline=True, linewidth=2, linecolor='black', mirror=True)
                 fig.update_yaxes(showline=True, linewidth=2, linecolor='black', mirror=True)
                 fig.update_xaxes(
@@ -123,6 +132,10 @@ with col2:
                 fig.update_layout(
                     title='gender plot of ' + str(cg_value),
                     title_font=dict(size=30),
+                    yaxis_title='methylation ratio',
+                    yaxis_title_font=dict(size=22),
+                    xaxis_title='gender and condition',
+                    xaxis_title_font=dict(size=22),
                     xaxis=dict(
                         tickmode='array',
                         tickvals=[0, 1, 2, 3],
@@ -132,13 +145,13 @@ with col2:
                             "RCC male (N = " + str(male_rcc_count) + ")",
                             "RCC female (N = " + str(female_rcc_count) + ")",
                         ],
-                        tickfont=dict(size=18)
+                        tickfont=dict(size=20)
                     ),
                     yaxis=dict(
                         tickmode='linear',
                         dtick=0.1,
                         showgrid = False,
-                        tickfont=dict(size=18)
+                        tickfont=dict(size=22)
                     ),
                     plot_bgcolor='rgba(0, 0, 0, 0)',
                     font=dict(
@@ -149,6 +162,7 @@ with col2:
                     height=750,
                     width=1000
                 )
+                fig.update_layout(yaxis_range=[0,1.0])
                 fig.update_xaxes(showline=True, linewidth=2, linecolor='black', mirror=True)
                 fig.update_yaxes(showline=True, linewidth=2, linecolor='black', mirror=True)
                 difference_rcc_male_vs_female = table.loc[(table["gender"] == "female") & (table["rcc"] == "rcc"), cg_value].mean() - \
@@ -251,6 +265,10 @@ with col2:
                     fig.update_layout(
                         title='long term survivorship plot of ' + str(cg_value),
                         title_font=dict(size=30),
+                        yaxis_title='methylation ratio',
+                        yaxis_title_font=dict(size=22),
+                        xaxis_title='years until death',
+                        xaxis_title_font=dict(size=22),
                         xaxis=dict(
                             tickmode='array',
                             tickvals=[0, 1],
@@ -258,23 +276,24 @@ with col2:
                                 "under 5 years (N = " + str(undercount) + ")",
                                 "over 5 years (N = " + str(overcount) + ")",
                             ],
-                            tickfont=dict(size=18)
+                            tickfont=dict(size=20)
                         ),
                         yaxis=dict(
                             tickmode='linear',
                             dtick=0.1,
                             showgrid = False,
-                            tickfont=dict(size=18)
+                            tickfont=dict(size=22)
                         ),
                         plot_bgcolor='rgba(0, 0, 0, 0)',
                         font=dict(
                             family="Arial",
                             size=24
                         ),
-                        margin=dict(r=20, b=120),
+                        margin=dict(r=20, b=150),
                         height=600,
                         width=1000
                     )
+                    fig.update_layout(yaxis_range=[0,1.0])
                     fig.update_xaxes(showline=True, linewidth=2, linecolor='black', mirror=True)
                     fig.update_yaxes(showline=True, linewidth=2, linecolor='black', mirror=True)
                     fig.update_xaxes(
@@ -284,7 +303,7 @@ with col2:
                     _, p_value = stats.mannwhitneyu(table.loc[table["days_to_death"] <= 1825, cg_value], table.loc[table["days_to_death"] > 1825, cg_value])
                     fig.add_annotation(
                         x=0.5,
-                        y=-0.2,
+                        y=-0.3,
                         xref='paper',
                         yref='paper',
                         text=f'Mean difference (under 5 years - over 5 years): {difference:.5f} | p-value: {p_value:.5e}',
@@ -315,6 +334,10 @@ with col2:
                 fig.update_layout(
                     title='age plot of ' + str(cg_value) + ' (young [<= 55] vs old [>55])',
                     title_font=dict(size=30),
+                    yaxis_title='methylation ratio',
+                    yaxis_title_font=dict(size=22),
+                    xaxis_title='age and condition',
+                    xaxis_title_font=dict(size=22),
                     xaxis=dict(
                         tickmode='array',
                         tickvals=[0, 1, 2, 3],
@@ -324,23 +347,24 @@ with col2:
                             "young RCC (N = " + str(under55_rcc_count) + ")",
                             "old RCC (N = " + str(over55_rcc_count) + ")",
                         ],
-                        tickfont=dict(size=18)
+                        tickfont=dict(size=20)
                     ),
                     yaxis=dict(
                         tickmode='linear',
                         dtick=0.1,
                         showgrid = False,
-                        tickfont=dict(size=18)
+                        tickfont=dict(size=22)
                     ),
                     plot_bgcolor='rgba(0, 0, 0, 0)',
                     font=dict(
                         family="Arial",
                         size=24
                     ),
-                    margin=dict(r=20, b=270),
+                    margin=dict(r=20, b=290),
                     height=750,
                     width=1000
                 )
+                fig.update_layout(yaxis_range=[0,1.0])
                 fig.update_xaxes(showline=True, linewidth=2, linecolor='black', mirror=True)
                 fig.update_yaxes(showline=True, linewidth=2, linecolor='black', mirror=True)
                 fig.update_xaxes(
@@ -376,7 +400,7 @@ with col2:
                 normal_old_mean = table.loc[(table["age_at_initial_pathologic_diagnosis"] > 55) & (table["rcc"] == "normal"), cg_value].mean()
                 fig.add_annotation(
                     x=0.5,
-                    y=-0.2,
+                    y=-0.3,
                     xref='paper',
                     yref='paper',
                     text=f'mean differences & p-values:',
@@ -388,7 +412,7 @@ with col2:
                 )
                 fig.add_annotation(
                     x=0.5,
-                    y=-0.3,
+                    y=-0.4,
                     xref='paper',
                     yref='paper',
                     text=f'RCC old - RCC young: {difference_rcc_age:.5f} | p-value: {p_value_rcc_age:.5e}',
@@ -400,7 +424,7 @@ with col2:
                 )
                 fig.add_annotation(
                     x=0.5,
-                    y=-0.4,
+                    y=-0.5,
                     xref='paper',
                     yref='paper',
                     text=f'normal old - normal young: {difference_normal_age:.5f} | p-value: {p_value_normal_age:.5e}',
@@ -412,7 +436,7 @@ with col2:
                 )
                 fig.add_annotation(
                     x=0.5,
-                    y=-0.5,
+                    y=-0.6,
                     xref='paper',
                     yref='paper',
                     text=f'normal young - RCC young: {difference_under55:.5f} | p-value: {p_value_under55:.5e}',
@@ -424,7 +448,7 @@ with col2:
                 )
                 fig.add_annotation(
                     x=0.5,
-                    y=-0.6,
+                    y=-0.7,
                     xref='paper',
                     yref='paper',
                     text=f'normal old - RCC old: {difference_over55:.5f} | p-value: {p_value_over55:.5e}',
@@ -434,55 +458,56 @@ with col2:
                     xanchor='center',
                     yanchor='top'
                 )
-                fig.add_annotation(
-                    x=0.28,
-                    y=-0.7,
-                    xref='paper',
-                    yref='paper',
-                    text=f'mean (RCC and young): {rcc_young_mean:.5f}',
-                    showarrow=False,
-                    font=dict(size=22),
-                    align='center',
-                    xanchor='center',
-                    yanchor='top'
-                )
-                fig.add_annotation(
-                    x=0.7,
-                    y=-0.7,
-                    xref='paper',
-                    yref='paper',
-                    text=f'mean (RCC and old): {rcc_old_mean:.5f}',
-                    showarrow=False,
-                    font=dict(size=22),
-                    align='center',
-                    xanchor='center',
-                    yanchor='top'
-                )
-                fig.add_annotation(
-                    x=0.28,
-                    y=-0.8,
-                    xref='paper',
-                    yref='paper',
-                    text=f'mean (normal and young): {normal_young_mean:.5f}',
-                    showarrow=False,
-                    font=dict(size=22),
-                    align='center',
-                    xanchor='center',
-                    yanchor='top'
-                )
-                fig.add_annotation(
-                    x=0.7,
-                    y=-0.8,
-                    xref='paper',
-                    yref='paper',
-                    text=f'mean (normal and old): {normal_old_mean:.5f}',
-                    showarrow=False,
-                    font=dict(size=22),
-                    align='center',
-                    xanchor='center',
-                    yanchor='top'
-                )
                 st.plotly_chart(fig)
+
+            if age:
+                under40_rcc_mean = table.loc[(table["age_at_initial_pathologic_diagnosis"] >= 20) & (table["age_at_initial_pathologic_diagnosis"] < 40) & (table["rcc"] == "rcc"), cg_value].mean()
+                under40_normal_mean = table.loc[(table["age_at_initial_pathologic_diagnosis"] >= 20) & (table["age_at_initial_pathologic_diagnosis"] < 40) & (table["rcc"] == "normal"), cg_value].mean()
+                under50_rcc_mean = table.loc[(table["age_at_initial_pathologic_diagnosis"] >= 40) & (table["age_at_initial_pathologic_diagnosis"] < 50) & (table["rcc"] == "rcc"), cg_value].mean()
+                under50_normal_mean = table.loc[(table["age_at_initial_pathologic_diagnosis"] >= 40) & (table["age_at_initial_pathologic_diagnosis"] < 50) & (table["rcc"] == "normal"), cg_value].mean()
+                under60_rcc_mean = table.loc[(table["age_at_initial_pathologic_diagnosis"] >= 50) & (table["age_at_initial_pathologic_diagnosis"] < 60) & (table["rcc"] == "rcc"), cg_value].mean()
+                under60_normal_mean = table.loc[(table["age_at_initial_pathologic_diagnosis"] >= 50) & (table["age_at_initial_pathologic_diagnosis"] < 60) & (table["rcc"] == "normal"), cg_value].mean()
+                under70_rcc_mean = table.loc[(table["age_at_initial_pathologic_diagnosis"] >= 60) & (table["age_at_initial_pathologic_diagnosis"] < 70) & (table["rcc"] == "rcc"), cg_value].mean()
+                under70_normal_mean = table.loc[(table["age_at_initial_pathologic_diagnosis"] >= 60) & (table["age_at_initial_pathologic_diagnosis"] < 70) & (table["rcc"] == "normal"), cg_value].mean()
+                under80_rcc_mean = table.loc[(table["age_at_initial_pathologic_diagnosis"] >= 70) & (table["age_at_initial_pathologic_diagnosis"] < 80) & (table["rcc"] == "rcc"), cg_value].mean()
+                under80_normal_mean = table.loc[(table["age_at_initial_pathologic_diagnosis"] >= 70) & (table["age_at_initial_pathologic_diagnosis"] < 80) & (table["rcc"] == "normal"), cg_value].mean()
+                under90_rcc_mean = table.loc[(table["age_at_initial_pathologic_diagnosis"] >= 80) & (table["age_at_initial_pathologic_diagnosis"] < 90) & (table["rcc"] == "rcc"), cg_value].mean()
+                under90_normal_mean = table.loc[(table["age_at_initial_pathologic_diagnosis"] >= 80) & (table["age_at_initial_pathologic_diagnosis"] < 90) & (table["rcc"] == "normal"), cg_value].mean()
+                mean_values_rcc = [ under40_rcc_mean, under50_rcc_mean, under60_rcc_mean, under70_rcc_mean, under80_rcc_mean, under90_rcc_mean]
+                mean_values_normal = [under40_normal_mean, under50_normal_mean, under60_normal_mean, under70_normal_mean, under80_normal_mean, under90_normal_mean]
+                labels = ["20-39", "40-49", "50-59", "60-69", "70-79", "80+"]
+                fig = go.Figure()
+                fig.add_trace(go.Scatter(x=labels, y=mean_values_normal, mode='lines+markers', name='Normal', line=dict(color='darkturquoise'), marker=dict(size=12)))
+                fig.add_trace(go.Scatter(x=labels, y=mean_values_rcc, mode='lines+markers', name='RCC', line=dict(color='mediumpurple'), marker=dict(size=12)))
+                fig.update_layout(
+                    title='age line plot of ' + str(cg_value) + ' (cohorts by 10)',
+                    title_font=dict(size=30),
+                    xaxis_title='age ranges',
+                    yaxis_title='mean methylation ratio',
+                    xaxis_title_font=dict(size=22),
+                    yaxis_title_font=dict(size=22),
+                    xaxis=dict(
+                        tickfont=dict(size=22),
+                    ),
+                    font=dict(
+                        family="Arial",
+                    ),
+                    yaxis=dict(
+                        tickmode='linear',
+                        dtick=0.1,
+                        showgrid = False,
+                        tickfont=dict(size=22),
+                    ),
+                    legend=dict(orientation="h", font=dict(size=22)),
+                    margin=dict(r=80, b=150),
+                    height=600,
+                    width=1050
+                )
+                fig.update_layout(yaxis_range=[0,1.0])
+                fig.update_xaxes(showline=True, linewidth=2, linecolor='black', mirror=True)
+                fig.update_yaxes(showline=True, linewidth=2, linecolor='black', mirror=True)
+                st.plotly_chart(fig)
+                
 
             if age:
                 under40_rcc_count = (((df['age_at_initial_pathologic_diagnosis'] >= 20) & (df['age_at_initial_pathologic_diagnosis'] < 40)) & (df['rcc'] == 'rcc')).sum()
@@ -513,9 +538,11 @@ with col2:
                 fig.update_layout(
                     title='age plot of ' + str(cg_value) + ' (cohorts by 10)',
                     title_font=dict(size=30),
+                    yaxis_title='methylation ratio',
+                    yaxis_title_font=dict(size=22),
                     xaxis=dict(
                         tickmode='array',
-                        tickvals=[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13],
+                        tickvals=[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11],
                         ticktext=[
                             "20-39 normal (N = " + str(under40_normal_count) + ")",
                             "20-39 RCC (N = " + str(under40_rcc_count) + ")",
@@ -536,17 +563,18 @@ with col2:
                         tickmode='linear',
                         dtick=0.1,
                         showgrid = False,
-                        tickfont=dict(size=18)
+                        tickfont=dict(size=22)
                     ),
                     plot_bgcolor='rgba(0, 0, 0, 0)',
                     font=dict(
                         family="Arial",
                         size=24
                     ),
-                    margin=dict(r=120, b=380),
-                    height = 800,
-                    width = 1000
+                    margin=dict(r=120, b=500),
+                    height = 950,
+                    width = 1100
                 )
+                fig.update_layout(yaxis_range=[0,1.0])
                 fig.update_xaxes(showline=True, linewidth=2, linecolor='black', mirror=True)
                 fig.update_yaxes(showline=True, linewidth=2, linecolor='black', mirror=True)
                 fig.update_xaxes(
@@ -581,7 +609,7 @@ with col2:
                     y=-0.5,
                     xref='paper',
                     yref='paper',
-                    text=f'p-value 20-39 (RCC vs normal): {p_value_under40:.5e}',
+                    text=f'p-values (RCC vs normal):',
                     showarrow=False,
                     font=dict(size=22),
                     align='center',
@@ -593,7 +621,7 @@ with col2:
                     y=-0.6,
                     xref='paper',
                     yref='paper',
-                    text=f'p-value 40-49 (RCC vs normal): {p_value_under50:.5e}',
+                    text=f'20-39: {p_value_under40:.5e}',
                     showarrow=False,
                     font=dict(size=22),
                     align='center',
@@ -605,7 +633,7 @@ with col2:
                     y=-0.7,
                     xref='paper',
                     yref='paper',
-                    text=f'p-value 50-59 (RCC vs normal): {p_value_under60:.5e}',
+                    text=f'40-49: {p_value_under50:.5e}',
                     showarrow=False,
                     font=dict(size=22),
                     align='center',
@@ -617,7 +645,7 @@ with col2:
                     y=-0.8,
                     xref='paper',
                     yref='paper',
-                    text=f'p-value 60-69 (RCC vs normal): {p_value_under70:.5e}',
+                    text=f'50-59: {p_value_under60:.5e}',
                     showarrow=False,
                     font=dict(size=22),
                     align='center',
@@ -629,7 +657,7 @@ with col2:
                     y=-0.9,
                     xref='paper',
                     yref='paper',
-                    text=f'p-value 70-79 (RCC vs normal): {p_value_under80:.5e}',
+                    text=f'60-69: {p_value_under70:.5e}',
                     showarrow=False,
                     font=dict(size=22),
                     align='center',
@@ -638,10 +666,22 @@ with col2:
                 )
                 fig.add_annotation(
                     x=0.5,
-                    y=-1.0,
+                    y=-1.00,
                     xref='paper',
                     yref='paper',
-                    text=f'p-value 80+ (RCC vs normal): {p_value_under90:.5e}',
+                    text=f'70-79: {p_value_under80:.5e}',
+                    showarrow=False,
+                    font=dict(size=22),
+                    align='center',
+                    xanchor='center',
+                    yanchor='top'
+                )
+                fig.add_annotation(
+                    x=0.5,
+                    y=-1.1,
+                    xref='paper',
+                    yref='paper',
+                    text=f'80+: {p_value_under90:.5e}',
                     showarrow=False,
                     font=dict(size=22),
                     align='center',
@@ -649,48 +689,3 @@ with col2:
                     yanchor='top'
                 )
                 st.plotly_chart(fig)
-            
-            if age:
-                under40_rcc_mean = table.loc[(table["age_at_initial_pathologic_diagnosis"] >= 20) & (table["age_at_initial_pathologic_diagnosis"] < 40) & (table["rcc"] == "rcc"), cg_value].mean()
-                under40_normal_mean = table.loc[(table["age_at_initial_pathologic_diagnosis"] >= 20) & (table["age_at_initial_pathologic_diagnosis"] < 40) & (table["rcc"] == "normal"), cg_value].mean()
-                under50_rcc_mean = table.loc[(table["age_at_initial_pathologic_diagnosis"] >= 40) & (table["age_at_initial_pathologic_diagnosis"] < 50) & (table["rcc"] == "rcc"), cg_value].mean()
-                under50_normal_mean = table.loc[(table["age_at_initial_pathologic_diagnosis"] >= 40) & (table["age_at_initial_pathologic_diagnosis"] < 50) & (table["rcc"] == "normal"), cg_value].mean()
-                under60_rcc_mean = table.loc[(table["age_at_initial_pathologic_diagnosis"] >= 50) & (table["age_at_initial_pathologic_diagnosis"] < 60) & (table["rcc"] == "rcc"), cg_value].mean()
-                under60_normal_mean = table.loc[(table["age_at_initial_pathologic_diagnosis"] >= 50) & (table["age_at_initial_pathologic_diagnosis"] < 60) & (table["rcc"] == "normal"), cg_value].mean()
-                under70_rcc_mean = table.loc[(table["age_at_initial_pathologic_diagnosis"] >= 60) & (table["age_at_initial_pathologic_diagnosis"] < 70) & (table["rcc"] == "rcc"), cg_value].mean()
-                under70_normal_mean = table.loc[(table["age_at_initial_pathologic_diagnosis"] >= 60) & (table["age_at_initial_pathologic_diagnosis"] < 70) & (table["rcc"] == "normal"), cg_value].mean()
-                under80_rcc_mean = table.loc[(table["age_at_initial_pathologic_diagnosis"] >= 70) & (table["age_at_initial_pathologic_diagnosis"] < 80) & (table["rcc"] == "rcc"), cg_value].mean()
-                under80_normal_mean = table.loc[(table["age_at_initial_pathologic_diagnosis"] >= 70) & (table["age_at_initial_pathologic_diagnosis"] < 80) & (table["rcc"] == "normal"), cg_value].mean()
-                under90_rcc_mean = table.loc[(table["age_at_initial_pathologic_diagnosis"] >= 80) & (table["age_at_initial_pathologic_diagnosis"] < 90) & (table["rcc"] == "rcc"), cg_value].mean()
-                under90_normal_mean = table.loc[(table["age_at_initial_pathologic_diagnosis"] >= 80) & (table["age_at_initial_pathologic_diagnosis"] < 90) & (table["rcc"] == "normal"), cg_value].mean()
-                mean_values_rcc = [ under40_rcc_mean, under50_rcc_mean, under60_rcc_mean, under70_rcc_mean, under80_rcc_mean, under90_rcc_mean]
-                mean_values_normal = [under40_normal_mean, under50_normal_mean, under60_normal_mean, under70_normal_mean, under80_normal_mean, under90_normal_mean]
-                labels = ["20-39", "40-49", "50-59", "60-69", "70-79", "80+"]
-                fig = go.Figure()
-                fig.add_trace(go.Scatter(x=labels, y=mean_values_rcc, mode='lines+markers', name='RCC', line=dict(color='darkturquoise')))
-                fig.add_trace(go.Scatter(x=labels, y=mean_values_normal, mode='lines+markers', name='Normal', line=dict(color='mediumpurple')))
-                fig.update_layout(
-                    title='age line plot of ' + str(cg_value) + ' (cohorts by 10)',
-                    title_font=dict(size=30),
-                    xaxis_title='age ranges',
-                    yaxis_title='mean value',
-                    xaxis_title_font=dict(size=18),
-                    yaxis_title_font=dict(size=18),
-                    xaxis=dict(
-                        tickfont=dict(size=18),
-                    ),
-                    yaxis=dict(
-                        tickmode='linear',
-                        dtick=0.1,
-                        showgrid = False,
-                        tickfont=dict(size=18),
-                    ),
-                    legend=dict(orientation="h", font=dict(size=18)),
-                    margin=dict(r=80, b=150),
-                    height=600,
-                    width=1000
-                )
-                fig.update_xaxes(showline=True, linewidth=2, linecolor='black', mirror=True)
-                fig.update_yaxes(showline=True, linewidth=2, linecolor='black', mirror=True)
-                st.plotly_chart(fig)
-                
