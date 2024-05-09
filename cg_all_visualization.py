@@ -35,6 +35,7 @@ if(pickle_path.is_file() == False or csv_path.stat().st_mtime > pickle_path.stat
         i = i + 1
 
 table = pd.read_pickle(pickle_path)
+df = table.dropna()
 
 col1, col2 = st.columns([1, 3])
 search_pressed = False
@@ -55,6 +56,7 @@ with col2:
             st.warning('No data found for the provided CG value.')
         else:
             df = table.sort_values(cg_value, ascending=False)
+            df = table.dropna(subset=[cg_value])
             if stage:
                 s1count = (df['stage'] == 'stage i').sum()
                 s2count = (df['stage'] == 'stage ii').sum()
@@ -165,30 +167,38 @@ with col2:
                 fig.update_layout(yaxis_range=[0,1.0])
                 fig.update_xaxes(showline=True, linewidth=2, linecolor='black', mirror=True)
                 fig.update_yaxes(showline=True, linewidth=2, linecolor='black', mirror=True)
-                difference_rcc_male_vs_female = table.loc[(table["gender"] == "female") & (table["rcc"] == "rcc"), cg_value].mean() - \
-                                table.loc[(table["gender"] == "male") & (table["rcc"] == "rcc"), cg_value].mean()
+
+                rcc_male = df[(df['gender'] == 'male') & (df['rcc'] == 'rcc')]
+                normal_male = df[(df['gender'] == 'male') & (df['rcc'] == 'normal')]
+                rcc_female = df[(df['gender'] == 'female') & (df['rcc'] == 'rcc')]
+                normal_female = df[(df['gender'] == 'female') & (df['rcc'] == 'normal')]
+
+                rcc_male_values = rcc_male[cg_value].dropna()
+                rcc_female_values = rcc_female[cg_value].dropna()
+                normal_male_values = normal_male[cg_value].dropna()
+                normal_female_values = normal_female[cg_value].dropna()
+
+                difference_rcc_male_vs_female = rcc_female_values.mean() - \
+                                rcc_male_values.mean()
                 _, p_value_rcc_male_vs_female = stats.mannwhitneyu(
-                    table.loc[(table["gender"] == "male") & (table["rcc"] == "rcc"), cg_value],
-                    table.loc[(table["gender"] == "female") & (table["rcc"] == "rcc"), cg_value]
+                    rcc_male_values, rcc_female_values
                 )
-                difference_normal_male_vs_female = table.loc[(table["gender"] == "female") & (table["rcc"] == "normal"), cg_value].mean() - \
-                                table.loc[(table["gender"] == "male") & (table["rcc"] == "normal"), cg_value].mean()
+                difference_normal_male_vs_female = normal_female_values.mean() - \
+                                normal_male_values.mean()
                 _, p_value_normal_male_vs_female = stats.mannwhitneyu(
-                    table.loc[(table["gender"] == "male") & (table["rcc"] == "normal"), cg_value],
-                    table.loc[(table["gender"] == "female") & (table["rcc"] == "normal"), cg_value]
+                    normal_male_values, normal_female_values
                 )
-                difference_male_vs_normal = table.loc[(table["gender"] == "male") & (table["rcc"] == "normal"), cg_value].mean() - \
-                                            table.loc[(table["gender"] == "male") & (table["rcc"] == "rcc"), cg_value].mean()
+                difference_male_vs_normal = normal_male_values.mean() - \
+                                            rcc_male_values.mean()
                 _, p_value_male_vs_normal = stats.mannwhitneyu(
-                    table.loc[(table["gender"] == "male") & (table["rcc"] == "normal"), cg_value],
-                    table.loc[(table["gender"] == "male") & (table["rcc"] == "rcc"), cg_value]
+                    normal_male_values,
+                    rcc_male_values
                 )
 
-                difference_female_vs_normal = table.loc[(table["gender"] == "female") & (table["rcc"] == "normal"), cg_value].mean() - \
-                                            table.loc[(table["gender"] == "female") & (table["rcc"] == "rcc"), cg_value].mean()
+                difference_female_vs_normal = normal_female_values.mean() - \
+                                            rcc_female_values.mean()
                 _, p_value_female_vs_normal = stats.mannwhitneyu(
-                    table.loc[(table["gender"] == "female") & (table["rcc"] == "normal"), cg_value],
-                    table.loc[(table["gender"] == "female") & (table["rcc"] == "rcc"), cg_value]
+                    normal_female_values, rcc_female_values
                 )
                 fig.add_annotation(
                     x=0.5,
@@ -299,8 +309,12 @@ with col2:
                     fig.update_xaxes(
                         categoryorder='category ascending'
                     )
-                    difference = table.loc[table["days_to_death"] <= 1825, cg_value].mean() - table.loc[table["days_to_death"] > 1825, cg_value].mean()
-                    _, p_value = stats.mannwhitneyu(table.loc[table["days_to_death"] <= 1825, cg_value], table.loc[table["days_to_death"] > 1825, cg_value])
+
+                    less_days_to_death = table.loc[table["days_to_death"] <= 1825, cg_value].dropna()
+                    more_days_to_death = table.loc[table["days_to_death"] > 1825, cg_value].dropna()
+
+                    difference = less_days_to_death.mean() - more_days_to_death.mean()
+                    _, p_value = stats.mannwhitneyu(less_days_to_death, more_days_to_death)
                     fig.add_annotation(
                         x=0.5,
                         y=-0.4,
@@ -370,34 +384,32 @@ with col2:
                 fig.update_xaxes(
                     categoryorder='category ascending'
                 )
-                difference_rcc_age = table.loc[(table["age_at_initial_pathologic_diagnosis"] > 50) & (table["rcc"] == "rcc"), cg_value].mean() - \
-                                table.loc[(table["age_at_initial_pathologic_diagnosis"] <= 50) & (table["rcc"] == "rcc"), cg_value].mean()
+                old_rcc = table.loc[(table["age_at_initial_pathologic_diagnosis"] > 50) & (table["rcc"] == "rcc"), cg_value].dropna()
+                young_rcc = table.loc[(table["age_at_initial_pathologic_diagnosis"] <= 50) & (table["rcc"] == "rcc"), cg_value].dropna()
+                old_normal = table.loc[(table["age_at_initial_pathologic_diagnosis"] > 50) & (table["rcc"] == "normal"), cg_value].dropna()
+                young_normal = table.loc[(table["age_at_initial_pathologic_diagnosis"] <= 50) & (table["rcc"] == "normal"), cg_value].dropna()
+
+                difference_rcc_age = old_rcc.mean() - \
+                                young_rcc.mean()
                 _, p_value_rcc_age = stats.mannwhitneyu(
-                    table.loc[(table["age_at_initial_pathologic_diagnosis"] <= 50) & (table["rcc"] == "rcc"), cg_value],
-                    table.loc[(table["age_at_initial_pathologic_diagnosis"] > 50) & (table["rcc"] == "rcc"), cg_value]
+                    young_rcc, old_rcc
                 )
-                difference_normal_age = table.loc[(table["age_at_initial_pathologic_diagnosis"] > 50) & (table["rcc"] == "normal"), cg_value].mean() - \
-                                table.loc[(table["age_at_initial_pathologic_diagnosis"] <= 50) & (table["rcc"] == "normal"), cg_value].mean()
+                difference_normal_age = old_normal.mean() - \
+                                young_normal.mean()
                 _, p_value_normal_age = stats.mannwhitneyu(
-                    table.loc[(table["age_at_initial_pathologic_diagnosis"] <= 50) & (table["rcc"] == "normal"), cg_value],
-                    table.loc[(table["age_at_initial_pathologic_diagnosis"] > 50) & (table["rcc"] == "normal"), cg_value]
+                    young_normal, old_normal
                 )
-                difference_under50 = table.loc[(table["age_at_initial_pathologic_diagnosis"] <= 50) & (table["rcc"] == "normal"), cg_value].mean() - \
-                                            table.loc[(table["age_at_initial_pathologic_diagnosis"] <= 50) & (table["rcc"] == "rcc"), cg_value].mean()
+                difference_under50 = young_normal.mean() - \
+                                            young_rcc.mean()
                 _, p_value_under50 = stats.mannwhitneyu(
-                    table.loc[(table["age_at_initial_pathologic_diagnosis"] <= 50) & (table["rcc"] == "normal"), cg_value],
-                    table.loc[(table["age_at_initial_pathologic_diagnosis"] <= 50) & (table["rcc"] == "rcc"), cg_value]
+                    young_normal, young_rcc
                 )
 
-                difference_over50 = table.loc[(table["age_at_initial_pathologic_diagnosis"] > 50) & (table["rcc"] == "normal"), cg_value].mean() - \
-                                            table.loc[(table["age_at_initial_pathologic_diagnosis"] > 50) & (table["rcc"] == "rcc"), cg_value].mean()
+                difference_over50 = old_normal.mean() - \
+                                            old_rcc.mean()
                 _, p_value_over50 = stats.mannwhitneyu(
-                    table.loc[(table["age_at_initial_pathologic_diagnosis"] > 50) & (table["rcc"] == "normal"), cg_value],
-                    table.loc[(table["age_at_initial_pathologic_diagnosis"] > 50) & (table["rcc"] == "rcc"), cg_value])
-                rcc_young_mean = table.loc[(table["age_at_initial_pathologic_diagnosis"] <= 50) & (table["rcc"] == "rcc"), cg_value].mean()
-                rcc_old_mean = table.loc[(table["age_at_initial_pathologic_diagnosis"] > 50) & (table["rcc"] == "rcc"), cg_value].mean()
-                normal_young_mean = table.loc[(table["age_at_initial_pathologic_diagnosis"] <= 50) & (table["rcc"] == "normal"), cg_value].mean()
-                normal_old_mean = table.loc[(table["age_at_initial_pathologic_diagnosis"] > 50) & (table["rcc"] == "normal"), cg_value].mean()
+                    old_normal, old_rcc
+                )
                 fig.add_annotation(
                     x=0.5,
                     y=-0.4,
@@ -461,25 +473,38 @@ with col2:
                 st.plotly_chart(fig)
 
             if age:
-                under40_count = (((df['age_at_initial_pathologic_diagnosis'] >= 20) & (df['age_at_initial_pathologic_diagnosis'] < 40))).sum()
-                under50_count = (((df['age_at_initial_pathologic_diagnosis'] >= 40) &( df['age_at_initial_pathologic_diagnosis'] < 50))).sum()
-                under60_count = (((df['age_at_initial_pathologic_diagnosis'] >= 50) & (df['age_at_initial_pathologic_diagnosis'] < 60))).sum()
-                under70_count = (((df['age_at_initial_pathologic_diagnosis'] >= 60) & (df['age_at_initial_pathologic_diagnosis'] < 70))).sum()
-                under80_count = (((df['age_at_initial_pathologic_diagnosis'] >= 70) & (df['age_at_initial_pathologic_diagnosis'] < 80))).sum()
-                under90_count = (((df['age_at_initial_pathologic_diagnosis'] >= 80))).sum()
+                rcc_40 = table.loc[(table["age_at_initial_pathologic_diagnosis"] >= 20) & (table["age_at_initial_pathologic_diagnosis"] < 40) & (table["rcc"] == "rcc"), cg_value].dropna()
+                normal_40 = table.loc[(table["age_at_initial_pathologic_diagnosis"] >= 20) & (table["age_at_initial_pathologic_diagnosis"] < 40) & (table["rcc"] == "normal"), cg_value].dropna()
+                rcc_50 = table.loc[(table["age_at_initial_pathologic_diagnosis"] >= 40) & (table["age_at_initial_pathologic_diagnosis"] < 50) & (table["rcc"] == "rcc"), cg_value].dropna()
+                normal_50 = table.loc[(table["age_at_initial_pathologic_diagnosis"] >= 40) & (table["age_at_initial_pathologic_diagnosis"] < 50) & (table["rcc"] == "normal"), cg_value].dropna()
+                rcc_60 = table.loc[(table["age_at_initial_pathologic_diagnosis"] >= 50) & (table["age_at_initial_pathologic_diagnosis"] < 60) & (table["rcc"] == "rcc"), cg_value].dropna()
+                normal_60 = table.loc[(table["age_at_initial_pathologic_diagnosis"] >= 50) & (table["age_at_initial_pathologic_diagnosis"] < 60) & (table["rcc"] == "normal"), cg_value].dropna()
+                rcc_70 = table.loc[(table["age_at_initial_pathologic_diagnosis"] >= 60) & (table["age_at_initial_pathologic_diagnosis"] < 70) & (table["rcc"] == "rcc"), cg_value].dropna()
+                normal_70 = table.loc[(table["age_at_initial_pathologic_diagnosis"] >= 60) & (table["age_at_initial_pathologic_diagnosis"] < 70) & (table["rcc"] == "normal"), cg_value].dropna()
+                rcc_80 = table.loc[(table["age_at_initial_pathologic_diagnosis"] >= 70) & (table["age_at_initial_pathologic_diagnosis"] < 80) & (table["rcc"] == "rcc"), cg_value].dropna()
+                normal_80 = table.loc[(table["age_at_initial_pathologic_diagnosis"] >= 70) & (table["age_at_initial_pathologic_diagnosis"] < 80) & (table["rcc"] == "normal"), cg_value].dropna()
+                rcc_90 = table.loc[(table["age_at_initial_pathologic_diagnosis"] >= 80) & (table["age_at_initial_pathologic_diagnosis"] < 90) & (table["rcc"] == "rcc"), cg_value].dropna()
+                normal_90 = table.loc[(table["age_at_initial_pathologic_diagnosis"] >= 80) & (table["age_at_initial_pathologic_diagnosis"] < 90) & (table["rcc"] == "normal"), cg_value].dropna()
 
-                under40_rcc_mean = table.loc[(table["age_at_initial_pathologic_diagnosis"] >= 20) & (table["age_at_initial_pathologic_diagnosis"] < 40) & (table["rcc"] == "rcc"), cg_value].mean()
-                under40_normal_mean = table.loc[(table["age_at_initial_pathologic_diagnosis"] >= 20) & (table["age_at_initial_pathologic_diagnosis"] < 40) & (table["rcc"] == "normal"), cg_value].mean()
-                under50_rcc_mean = table.loc[(table["age_at_initial_pathologic_diagnosis"] >= 40) & (table["age_at_initial_pathologic_diagnosis"] < 50) & (table["rcc"] == "rcc"), cg_value].mean()
-                under50_normal_mean = table.loc[(table["age_at_initial_pathologic_diagnosis"] >= 40) & (table["age_at_initial_pathologic_diagnosis"] < 50) & (table["rcc"] == "normal"), cg_value].mean()
-                under60_rcc_mean = table.loc[(table["age_at_initial_pathologic_diagnosis"] >= 50) & (table["age_at_initial_pathologic_diagnosis"] < 60) & (table["rcc"] == "rcc"), cg_value].mean()
-                under60_normal_mean = table.loc[(table["age_at_initial_pathologic_diagnosis"] >= 50) & (table["age_at_initial_pathologic_diagnosis"] < 60) & (table["rcc"] == "normal"), cg_value].mean()
-                under70_rcc_mean = table.loc[(table["age_at_initial_pathologic_diagnosis"] >= 60) & (table["age_at_initial_pathologic_diagnosis"] < 70) & (table["rcc"] == "rcc"), cg_value].mean()
-                under70_normal_mean = table.loc[(table["age_at_initial_pathologic_diagnosis"] >= 60) & (table["age_at_initial_pathologic_diagnosis"] < 70) & (table["rcc"] == "normal"), cg_value].mean()
-                under80_rcc_mean = table.loc[(table["age_at_initial_pathologic_diagnosis"] >= 70) & (table["age_at_initial_pathologic_diagnosis"] < 80) & (table["rcc"] == "rcc"), cg_value].mean()
-                under80_normal_mean = table.loc[(table["age_at_initial_pathologic_diagnosis"] >= 70) & (table["age_at_initial_pathologic_diagnosis"] < 80) & (table["rcc"] == "normal"), cg_value].mean()
-                under90_rcc_mean = table.loc[(table["age_at_initial_pathologic_diagnosis"] >= 80) & (table["age_at_initial_pathologic_diagnosis"] < 90) & (table["rcc"] == "rcc"), cg_value].mean()
-                under90_normal_mean = table.loc[(table["age_at_initial_pathologic_diagnosis"] >= 80) & (table["age_at_initial_pathologic_diagnosis"] < 90) & (table["rcc"] == "normal"), cg_value].mean()
+                under40_count = table.loc[(table["age_at_initial_pathologic_diagnosis"] >= 20) & (table["age_at_initial_pathologic_diagnosis"] < 40), cg_value].count()
+                under50_count = table.loc[(table["age_at_initial_pathologic_diagnosis"] >= 40) & (table["age_at_initial_pathologic_diagnosis"] < 50), cg_value].count()
+                under60_count = table.loc[(table["age_at_initial_pathologic_diagnosis"] >= 50) & (table["age_at_initial_pathologic_diagnosis"] < 60), cg_value].count()
+                under70_count = table.loc[(table["age_at_initial_pathologic_diagnosis"] >= 60) & (table["age_at_initial_pathologic_diagnosis"] < 70), cg_value].count()
+                under80_count = table.loc[(table["age_at_initial_pathologic_diagnosis"] >= 70) & (table["age_at_initial_pathologic_diagnosis"] < 80), cg_value].count()
+                under90_count = table.loc[(table["age_at_initial_pathologic_diagnosis"] >= 80) & (table["age_at_initial_pathologic_diagnosis"] < 90), cg_value].count()
+
+                under40_rcc_mean = rcc_40.mean()
+                under40_normal_mean = normal_40.mean()
+                under50_rcc_mean = rcc_50.mean()
+                under50_normal_mean = normal_50.mean()
+                under60_rcc_mean = rcc_60.mean()
+                under60_normal_mean = normal_60.mean()
+                under70_rcc_mean = rcc_70.mean()
+                under70_normal_mean = normal_70.mean()
+                under80_rcc_mean = rcc_80.mean()
+                under80_normal_mean = normal_80.mean()
+                under90_rcc_mean = rcc_90.mean()
+                under90_normal_mean = normal_90.mean()
                 mean_values_rcc = [ under40_rcc_mean, under50_rcc_mean, under60_rcc_mean, under70_rcc_mean, under80_rcc_mean, under90_rcc_mean]
                 mean_values_normal = [under40_normal_mean, under50_normal_mean, under60_normal_mean, under70_normal_mean, under80_normal_mean, under90_normal_mean]
                 labels = ["20-39<br>(N = " + str(under40_count) + ")", "40-49<br>(N = " + str(under50_count) + ")", "50-59<br>(N = " + str(under60_count) + ")", "60-69<br>(N = " + str(under70_count) + ")", "70-79<br>(N = " + str(under80_count) + ")", "80+<br>(N = " + str(under90_count) + ")"]
@@ -517,6 +542,19 @@ with col2:
                 
 
             if age:
+                rcc_40 = table.loc[(table["age_at_initial_pathologic_diagnosis"] >= 20) & (table["age_at_initial_pathologic_diagnosis"] < 40) & (table["rcc"] == "rcc"), cg_value].dropna()
+                normal_40 = table.loc[(table["age_at_initial_pathologic_diagnosis"] >= 20) & (table["age_at_initial_pathologic_diagnosis"] < 40) & (table["rcc"] == "normal"), cg_value].dropna()
+                rcc_50 = table.loc[(table["age_at_initial_pathologic_diagnosis"] >= 40) & (table["age_at_initial_pathologic_diagnosis"] < 50) & (table["rcc"] == "rcc"), cg_value].dropna()
+                normal_50 = table.loc[(table["age_at_initial_pathologic_diagnosis"] >= 40) & (table["age_at_initial_pathologic_diagnosis"] < 50) & (table["rcc"] == "normal"), cg_value].dropna()
+                rcc_60 = table.loc[(table["age_at_initial_pathologic_diagnosis"] >= 50) & (table["age_at_initial_pathologic_diagnosis"] < 60) & (table["rcc"] == "rcc"), cg_value].dropna()
+                normal_60 = table.loc[(table["age_at_initial_pathologic_diagnosis"] >= 50) & (table["age_at_initial_pathologic_diagnosis"] < 60) & (table["rcc"] == "normal"), cg_value].dropna()
+                rcc_70 = table.loc[(table["age_at_initial_pathologic_diagnosis"] >= 60) & (table["age_at_initial_pathologic_diagnosis"] < 70) & (table["rcc"] == "rcc"), cg_value].dropna()
+                normal_70 = table.loc[(table["age_at_initial_pathologic_diagnosis"] >= 60) & (table["age_at_initial_pathologic_diagnosis"] < 70) & (table["rcc"] == "normal"), cg_value].dropna()
+                rcc_80 = table.loc[(table["age_at_initial_pathologic_diagnosis"] >= 70) & (table["age_at_initial_pathologic_diagnosis"] < 80) & (table["rcc"] == "rcc"), cg_value].dropna()
+                normal_80 = table.loc[(table["age_at_initial_pathologic_diagnosis"] >= 70) & (table["age_at_initial_pathologic_diagnosis"] < 80) & (table["rcc"] == "normal"), cg_value].dropna()
+                rcc_90 = table.loc[(table["age_at_initial_pathologic_diagnosis"] >= 80) & (table["age_at_initial_pathologic_diagnosis"] < 90) & (table["rcc"] == "rcc"), cg_value].dropna()
+                normal_90 = table.loc[(table["age_at_initial_pathologic_diagnosis"] >= 80) & (table["age_at_initial_pathologic_diagnosis"] < 90) & (table["rcc"] == "normal"), cg_value].dropna()
+               
                 under40_rcc_count = (((df['age_at_initial_pathologic_diagnosis'] >= 20) & (df['age_at_initial_pathologic_diagnosis'] < 40)) & (df['rcc'] == 'rcc')).sum()
                 under40_normal_count = (((df['age_at_initial_pathologic_diagnosis'] >= 20) & (df['age_at_initial_pathologic_diagnosis'] < 40)) & (df['rcc'] == 'normal')).sum()
                 under50_rcc_count = (((df['age_at_initial_pathologic_diagnosis'] >= 40) &( df['age_at_initial_pathologic_diagnosis'] < 50)) & (df['rcc'] == 'rcc')).sum()
@@ -563,8 +601,8 @@ with col2:
                             "60-69 RCC (N = " + str(under70_rcc_count) + ")",
                             "70-79 normal (N = " + str(under80_normal_count) + ")",
                             "70-79 RCC (N = " + str(under80_rcc_count) + ")",
-                            "80+ normal (N = " + str(under90_normal_count) + ")",
-                            "80+ RCC (N = " + str(under90_rcc_count) + ")",
+                            "80-89 normal (N = " + str(under90_normal_count) + ")",
+                            "80-89 RCC (N = " + str(under90_rcc_count) + ")",
                         ],
                         tickfont=dict(size=16)
                     ),
@@ -590,28 +628,22 @@ with col2:
                     categoryorder='category ascending'
                 )
                 _, p_value_under40 = stats.mannwhitneyu(
-                table.loc[((table["age_at_initial_pathologic_diagnosis"] >= 20) & (table["age_at_initial_pathologic_diagnosis"] < 40)) & (table["rcc"] == "rcc"), cg_value],
-                table.loc[((table["age_at_initial_pathologic_diagnosis"] >= 20) & (table["age_at_initial_pathologic_diagnosis"] < 40)) & (table["rcc"] == "normal"), cg_value]
+                rcc_40, normal_40
                 )
                 _, p_value_under50 = stats.mannwhitneyu(
-                table.loc[((table["age_at_initial_pathologic_diagnosis"] >= 40) & (table["age_at_initial_pathologic_diagnosis"] < 50)) & (table["rcc"] == "rcc"), cg_value],
-                table.loc[((table["age_at_initial_pathologic_diagnosis"] >= 40) & (table["age_at_initial_pathologic_diagnosis"] < 50)) & (table["rcc"] == "normal"), cg_value]
+                rcc_50, normal_50
                 )
                 _, p_value_under60 = stats.mannwhitneyu(
-                table.loc[((table["age_at_initial_pathologic_diagnosis"] >= 50) & (table["age_at_initial_pathologic_diagnosis"] < 60)) & (table["rcc"] == "rcc"), cg_value],
-                table.loc[((table["age_at_initial_pathologic_diagnosis"] >= 50) & (table["age_at_initial_pathologic_diagnosis"] < 60)) & (table["rcc"] == "normal"), cg_value]
+                rcc_60, normal_60
                 )
                 _, p_value_under70 = stats.mannwhitneyu(
-                table.loc[((table["age_at_initial_pathologic_diagnosis"] >= 60) & (table["age_at_initial_pathologic_diagnosis"] < 70)) & (table["rcc"] == "rcc"), cg_value],
-                table.loc[((table["age_at_initial_pathologic_diagnosis"] >= 60) & (table["age_at_initial_pathologic_diagnosis"] < 70)) & (table["rcc"] == "normal"), cg_value]
+                rcc_70, normal_70
                 )
                 _, p_value_under80 = stats.mannwhitneyu(
-                table.loc[((table["age_at_initial_pathologic_diagnosis"] >= 70) & (table["age_at_initial_pathologic_diagnosis"] < 80)) & (table["rcc"] == "rcc"), cg_value],
-                table.loc[((table["age_at_initial_pathologic_diagnosis"] >= 70) & (table["age_at_initial_pathologic_diagnosis"] < 80)) & (table["rcc"] == "normal"), cg_value]
+                rcc_80, normal_80
                 )
                 _, p_value_under90 = stats.mannwhitneyu(
-                table.loc[((table["age_at_initial_pathologic_diagnosis"] >= 80)) & (table["rcc"] == "rcc"), cg_value],
-                table.loc[((table["age_at_initial_pathologic_diagnosis"] >= 80)) & (table["rcc"] == "normal"), cg_value]
+                rcc_90, normal_90
                 )
                 fig.add_annotation(
                     x=0.5,
@@ -690,7 +722,7 @@ with col2:
                     y=-1.1,
                     xref='paper',
                     yref='paper',
-                    text=f'80+: {p_value_under90:.5e}' + ('*' if p_value_under90 < 0.05 else ''),
+                    text=f'80-89: {p_value_under90:.5e}' + ('*' if p_value_under90 < 0.05 else ''),
                     showarrow=False,
                     font=dict(size=22),
                     align='center',
