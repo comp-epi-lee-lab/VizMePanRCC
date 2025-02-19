@@ -1,8 +1,0 @@
-name: base
-channels:
-  - bioconda
-  - defaults
-dependencies:
-  - scipy=1.9.3
-  - pip:
-      - plotly==5.15.0
