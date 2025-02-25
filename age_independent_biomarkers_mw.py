@@ -25,21 +25,21 @@ def compute_significant_cgids(group1, group2, table):
     p_vals = list(p_values.values())
     fdr_corrected = stats.false_discovery_control(p_vals)
     
-    significant_cgIDs = {cgID for cgID, fdr in zip(cgIDs, fdr_corrected) if (fdr <= 0.05 and methylation_differences[cgID] >= 0.6)}
+    significant_cgIDs = {cgID for cgID, fdr in zip(cgIDs, fdr_corrected) if (fdr <= 0.05 and methylation_differences[cgID] >= 0.2)}
     
     return significant_cgIDs
 
 AAA = compute_significant_cgids(table["rcc"] == "rcc", table["rcc"] == "normal", table)
 
-BBB = compute_significant_cgids(table["age_at_initial_pathologic_diagnosis"] < 50, 
-                                table["age_at_initial_pathologic_diagnosis"] >= 50, table)
+BBB = compute_significant_cgids(table["age_at_initial_pathologic_diagnosis"] <= 50, 
+                                table["age_at_initial_pathologic_diagnosis"] > 50, table)
 
 XXX = AAA - BBB
 
-young = table["age_at_initial_pathologic_diagnosis"] >= 50
+young = table["age_at_initial_pathologic_diagnosis"] > 50
 YYY = compute_significant_cgids((table["rcc"] == "rcc") & young, (table["rcc"] == "normal") & young, table)
 
-old = table["age_at_initial_pathologic_diagnosis"] < 50
+old = table["age_at_initial_pathologic_diagnosis"] <= 50
 ZZZ = compute_significant_cgids((table["rcc"] == "rcc") & old, (table["rcc"] == "normal") & old, table)
 
 print("Number of significant cgIDs in AAA:", len(AAA))

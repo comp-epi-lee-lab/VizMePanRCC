@@ -9,6 +9,8 @@ warnings.filterwarnings("ignore")
 csv_path = Path(r'data/kipan_clin_meth.tsv')
 pickle_path = Path(r'data/pickle_file.pk1')
 
+st.set_page_config(page_title=None, page_icon=None, layout="wide", initial_sidebar_state="auto", menu_items=None)
+
 if(pickle_path.is_file() == False or csv_path.stat().st_mtime > pickle_path.stat().st_mtime):
 
     table = pd.read_csv(csv_path, sep='\t')
