@@ -1,3 +1,4 @@
+import numpy as np
 import pandas as pd
 import streamlit as st
 import plotly.graph_objs as go
@@ -6,10 +7,11 @@ from pathlib import Path
 import warnings
 warnings.filterwarnings("ignore")
 
-csv_path = Path(r'data/kipan_clin_meth.tsv')
-pickle_path = Path(r'data/pickle_file.pk1')
+csv_path = Path(r'/Users/abhinav/Documents/GitHub/Research/Research/data/kipan_clin_meth.tsv')
+pickle_path = Path(r'/Users/abhinav/Documents/GitHub/Research/Research/data/pickle_file.pk1')
 
-st.set_page_config(page_title=None, page_icon=None, layout="wide", initial_sidebar_state="auto", menu_items=None)
+large_20_differences = [0.15642470275754355, 0.1553588536675063, 0.15482110244865024, 0.1544712550474568, 0.1533709537114315, 0.15219904231398718, 0.15074757851385756, 0.14662371028511223, 0.14650689524987492, 0.14342406505768346, 0.14025356892466606, 0.13877998112299295, 0.13861957326956653, 0.13688944108480505, 0.13586140448081035, 0.13453964654821216, 0.13434813435909798, 0.13305454319644583, 0.13005207422393905, 0.12843642705731367]
+cg_large_20_differences = ["cg02598441", "cg06296331", "cg04039555", "cg01774894", "cg00249511", "cg03045635", "cg05982757", "cg08940787", "cg00939495", "cg04597433", "cg02632185", "cg05721365", "cg06113789", "cg08827307", "cg00576279", "cg02637318", "cg04387835", "cg08360726", "cg01382860", "cg06546677"]
 
 if(pickle_path.is_file() == False or csv_path.stat().st_mtime > pickle_path.stat().st_mtime):
 
@@ -20,7 +22,7 @@ if(pickle_path.is_file() == False or csv_path.stat().st_mtime > pickle_path.stat
     cg_large_20_differences = [str('empty')] * 20
 
     i = 0
-    for (columnName, columnData) in table.items():
+    for (columnName, columnData) in table.iteritems():
         if (i >= 17):
             difference = abs(table.loc[(table["age_at_initial_pathologic_diagnosis"] <= 50) & (table["rcc"] == "rcc"), columnName].mean() - table.loc[(table["age_at_initial_pathologic_diagnosis"] > 50) & (table["rcc"] == "rcc"), columnName].mean())
             for j in range(0, 20):
@@ -39,11 +41,17 @@ col1, col2 = st.columns([1, 3])
 search_pressed = False
 
 with col1:
-    cg_value = st.text_input('Search CG Value', value='cg01774894', placeholder='cgXXXXXXXX')
-    age = st.checkbox("Age", value=True, key='age')
-    gender = st.checkbox("Gender", value=True, key='gender')
-    lts = st.checkbox("Long Term Survivorship", value=True, key='lts')
-    stage = st.checkbox("Stage", value=True, key='stage')
+    subtype_options = ['All'] + ['kirc', 'kirp']
+    selected_subtype = st.selectbox(
+        'Select RCC Subtype',
+        options=subtype_options,
+        index=0
+    )
+    cg_value = st.text_input('Search CG Value', placeholder='cgXXXXXXXX')
+    age = st.checkbox("Age", key='age')
+    lts = st.checkbox("Long Term Survivorship", key='lts')
+    stage = st.checkbox("Stage", key='stage')
+    gender = st.checkbox("Gender", key='gender')
     search = st.button('Search')
     if search:
         search_pressed = True
@@ -55,25 +63,25 @@ with col2:
         else:
             df = table.sort_values(cg_value, ascending=False)
             df = table.dropna(subset=[cg_value])
-
             if age:
+                if selected_subtype != 'All': df = df[df['subtype'] == selected_subtype]
                 df = table.sort_values(cg_value, ascending=False)
                 df.head()
-                under50_rcc_count = ((df['age_at_initial_pathologic_diagnosis'] <= 50) & (df['rcc'] == 'rcc')).sum()
-                under50_normal_count = ((df['age_at_initial_pathologic_diagnosis'] <= 50) & (df['rcc'] == 'normal')).sum()
-                over50_rcc_count = ((df['age_at_initial_pathologic_diagnosis'] > 50) & (df['rcc'] == 'rcc')).sum()
-                over50_normal_count = ((df['age_at_initial_pathologic_diagnosis'] > 50) & (df['rcc'] == 'normal')).sum()
+                under50_rcc_count = ((df['age_at_initial_pathologic_diagnosis'] < 50) & (df['rcc'] == 'rcc')).sum()
+                under50_normal_count = ((df['age_at_initial_pathologic_diagnosis'] < 50) & (df['rcc'] == 'normal')).sum()
+                over50_rcc_count = ((df['age_at_initial_pathologic_diagnosis'] >= 50) & (df['rcc'] == 'rcc')).sum()
+                over50_normal_count = ((df['age_at_initial_pathologic_diagnosis'] >= 50) & (df['rcc'] == 'normal')).sum()
                 fig = go.Figure()
-                fig.add_trace(go.Box(y=df[(df['age_at_initial_pathologic_diagnosis'] <= 50) & (df['rcc'] == 'normal')][cg_value],
+                fig.add_trace(go.Box(y=df[(df['age_at_initial_pathologic_diagnosis'] < 50) & (df['rcc'] == 'normal')][cg_value],
                                     x=[0]*under50_normal_count, boxpoints="all", jitter=0.2, marker=dict(color="darkturquoise"), showlegend=False))
-                fig.add_trace(go.Box(y=df[(df['age_at_initial_pathologic_diagnosis'] > 50) & (df['rcc'] == 'normal')][cg_value],
+                fig.add_trace(go.Box(y=df[(df['age_at_initial_pathologic_diagnosis'] >= 50) & (df['rcc'] == 'normal')][cg_value],
                                     x=[1]*over50_normal_count, boxpoints="all", jitter=0.2, marker=dict(color="#3fa6a8"), showlegend=False))
-                fig.add_trace(go.Box(y=df[(df['age_at_initial_pathologic_diagnosis'] <= 50) & (df['rcc'] == 'rcc')][cg_value],
+                fig.add_trace(go.Box(y=df[(df['age_at_initial_pathologic_diagnosis'] < 50) & (df['rcc'] == 'rcc')][cg_value],
                                     x=[2]*under50_rcc_count, boxpoints="all", jitter=0.2, marker=dict(color="mediumpurple"), showlegend=False))
-                fig.add_trace(go.Box(y=df[(df['age_at_initial_pathologic_diagnosis'] > 50) & (df['rcc'] == 'rcc')][cg_value],
+                fig.add_trace(go.Box(y=df[(df['age_at_initial_pathologic_diagnosis'] >= 50) & (df['rcc'] == 'rcc')][cg_value],
                                     x=[3]*over50_rcc_count, boxpoints="all", jitter=0.2, marker=dict(color="#8977ad"), showlegend=False))
                 fig.update_layout(
-                    title='age plot of ' + str(cg_value) + ' (young [<= 50] vs old [>50])',
+                    title='age plot of ' + str(cg_value) + ' (young [< 50] vs old [>= 50])',
                     title_font=dict(size=30),
                     yaxis_title='<b>methylation ratio</b>',
                     yaxis_title_font=dict(size=22),
@@ -92,7 +100,7 @@ with col2:
                     ),
                     yaxis=dict(
                         tickmode='linear',
-                        dtick=0.2,
+                        dtick=0.1,
                         showgrid = False,
                         tickfont=dict(size=22)
                     ),
@@ -105,16 +113,16 @@ with col2:
                     height=750,
                     width=1000
                 )
-                fig.update_layout(yaxis_range=[0,1.1])
+                fig.update_layout(yaxis_range=[0,1.0])
                 fig.update_xaxes(showline=True, linewidth=2, linecolor='black', mirror=True)
                 fig.update_yaxes(showline=True, linewidth=2, linecolor='black', mirror=True)
                 fig.update_xaxes(
                     categoryorder='category ascending'
                 )
-                old_rcc = table.loc[(table["age_at_initial_pathologic_diagnosis"] > 50) & (table["rcc"] == "rcc"), cg_value].dropna()
-                young_rcc = table.loc[(table["age_at_initial_pathologic_diagnosis"] <= 50) & (table["rcc"] == "rcc"), cg_value].dropna()
-                old_normal = table.loc[(table["age_at_initial_pathologic_diagnosis"] > 50) & (table["rcc"] == "normal"), cg_value].dropna()
-                young_normal = table.loc[(table["age_at_initial_pathologic_diagnosis"] <= 50) & (table["rcc"] == "normal"), cg_value].dropna()
+                old_rcc = table.loc[(table["age_at_initial_pathologic_diagnosis"] >= 50) & (table["rcc"] == "rcc"), cg_value].dropna()
+                young_rcc = table.loc[(table["age_at_initial_pathologic_diagnosis"] < 50) & (table["rcc"] == "rcc"), cg_value].dropna()
+                old_normal = table.loc[(table["age_at_initial_pathologic_diagnosis"] >= 50) & (table["rcc"] == "normal"), cg_value].dropna()
+                young_normal = table.loc[(table["age_at_initial_pathologic_diagnosis"] < 50) & (table["rcc"] == "normal"), cg_value].dropna()
 
                 difference_rcc_age = old_rcc.mean() - \
                                 young_rcc.mean()
@@ -173,185 +181,9 @@ with col2:
                     xanchor='center',
                     yanchor='top'
                 )
-
-                significance1 = 'ns'
-                if p_value_normal_age < 0.0005:
-                    significance1 = '***'
-                elif p_value_normal_age < 0.005:
-                    significance1 = '**'
-                elif p_value_normal_age < 0.05:
-                    significance1 = '*'
-
-                fig.add_shape(
-                    type="line",
-                    x0=0,
-                    y0=1.03,
-                    x1=1,
-                    y1=1.03,
-                    line=dict(color="black", width=2)
-                )
-                fig.add_shape(
-                    type="line",
-                    x0=0,
-                    y0=1.03,
-                    x1=0,
-                    y1=1.01,
-                    line=dict(color="black", width=2)
-                )
-                fig.add_shape(
-                    type="line",
-                    x0=1,
-                    y0=1.03,
-                    x1=1,
-                    y1=1.01,
-                    line=dict(color="black", width=2)
-                )
                 fig.add_annotation(
                     x=0.5,
-                    y=1.08,
-                    font=dict(size=24),
-                    showarrow=False,
-                    text=significance1
-                )
-
-                significance2 = 'ns'
-                if p_value_rcc_age < 0.0005:
-                    significance2 = '***'
-                elif p_value_rcc_age < 0.005:
-                    significance2 = '**'
-                elif p_value_rcc_age < 0.05:
-                    significance2 = '*'
-
-                fig.add_shape(
-                    type="line",
-                    x0=2,
-                    y0=1.03,
-                    x1=3,
-                    y1=1.03,
-                    line=dict(color="black", width=2)
-                )
-                fig.add_shape(
-                    type="line",
-                    x0=2,
-                    y0=1.03,
-                    x1=2,
-                    y1=1.01,
-                    line=dict(color="black", width=2)
-                )
-                fig.add_shape(
-                    type="line",
-                    x0=3,
-                    y0=1.03,
-                    x1=3,
-                    y1=1.01,
-                    line=dict(color="black", width=2)
-                )
-                fig.add_annotation(
-                    x=2.5,
-                    y=1.08,
-                    font=dict(size=24),
-                    showarrow=False,
-                    text=significance2
-                )
-
-                st.plotly_chart(fig)
-
-            if age:
-                df = table.sort_values(cg_value, ascending=False)
-                df.head()
-                under50_rcc_count = ((df['age_at_initial_pathologic_diagnosis'] <= 50) & (df['rcc'] == 'rcc')).sum()
-                under50_normal_count = ((df['age_at_initial_pathologic_diagnosis'] <= 50) & (df['rcc'] == 'normal')).sum()
-                over50_rcc_count = ((df['age_at_initial_pathologic_diagnosis'] > 50) & (df['rcc'] == 'rcc')).sum()
-                over50_normal_count = ((df['age_at_initial_pathologic_diagnosis'] > 50) & (df['rcc'] == 'normal')).sum()
-                fig = go.Figure()
-                fig.add_trace(go.Box(y=df[(df['age_at_initial_pathologic_diagnosis'] <= 50) & (df['rcc'] == 'normal')][cg_value],
-                                    x=[0]*under50_normal_count, boxpoints="all", jitter=0.2, marker=dict(color="darkturquoise"), showlegend=False))
-                fig.add_trace(go.Box(y=df[(df['age_at_initial_pathologic_diagnosis'] > 50) & (df['rcc'] == 'normal')][cg_value],
-                                    x=[2]*over50_normal_count, boxpoints="all", jitter=0.2, marker=dict(color="#3fa6a8"), showlegend=False))
-                fig.add_trace(go.Box(y=df[(df['age_at_initial_pathologic_diagnosis'] <= 50) & (df['rcc'] == 'rcc')][cg_value],
-                                    x=[1]*under50_rcc_count, boxpoints="all", jitter=0.2, marker=dict(color="mediumpurple"), showlegend=False))
-                fig.add_trace(go.Box(y=df[(df['age_at_initial_pathologic_diagnosis'] > 50) & (df['rcc'] == 'rcc')][cg_value],
-                                    x=[3]*over50_rcc_count, boxpoints="all", jitter=0.2, marker=dict(color="#8977ad"), showlegend=False))
-                fig.update_layout(
-                    title='age plot of ' + str(cg_value) + ' (young [<= 50] vs old [>50])',
-                    title_font=dict(size=30),
-                    yaxis_title='<b>methylation ratio</b>',
-                    yaxis_title_font=dict(size=22),
-                    xaxis_title='<b>age and condition</b>',
-                    xaxis_title_font=dict(size=22),
-                    xaxis=dict(
-                        tickmode='array',
-                        tickvals=[0, 2, 1, 3],
-                        ticktext=[
-                            "young normal<br>(N = " + str(under50_normal_count) + ")",
-                            "old normal<br>(N = " + str(over50_normal_count) + ")",
-                            "early-onset RCC<br>(N = " + str(under50_rcc_count) + ")",
-                            "late-onset RCC<br>(N = " + str(over50_rcc_count) + ")",
-                        ],
-                        tickfont=dict(size=20)
-                    ),
-                    yaxis=dict(
-                        tickmode='linear',
-                        dtick=0.2,
-                        showgrid = False,
-                        tickfont=dict(size=22)
-                    ),
-                    plot_bgcolor='rgba(0, 0, 0, 0)',
-                    font=dict(
-                        family="Arial",
-                        size=24
-                    ),
-                    margin=dict(r=20, b=320),
-                    height=750,
-                    width=1000
-                )
-                fig.update_layout(yaxis_range=[0,1.1])
-                fig.update_xaxes(showline=True, linewidth=2, linecolor='black', mirror=True)
-                fig.update_yaxes(showline=True, linewidth=2, linecolor='black', mirror=True)
-                fig.update_xaxes(
-                    categoryorder='category ascending'
-                )
-                old_rcc = table.loc[(table["age_at_initial_pathologic_diagnosis"] > 50) & (table["rcc"] == "rcc"), cg_value].dropna()
-                young_rcc = table.loc[(table["age_at_initial_pathologic_diagnosis"] <= 50) & (table["rcc"] == "rcc"), cg_value].dropna()
-                old_normal = table.loc[(table["age_at_initial_pathologic_diagnosis"] > 50) & (table["rcc"] == "normal"), cg_value].dropna()
-                young_normal = table.loc[(table["age_at_initial_pathologic_diagnosis"] <= 50) & (table["rcc"] == "normal"), cg_value].dropna()
-
-                difference_rcc_age = old_rcc.mean() - \
-                                young_rcc.mean()
-                _, p_value_rcc_age = stats.mannwhitneyu(
-                    young_rcc, old_rcc
-                )
-                difference_normal_age = old_normal.mean() - \
-                                young_normal.mean()
-                _, p_value_normal_age = stats.mannwhitneyu(
-                    young_normal, old_normal
-                )
-                difference_under50 = young_normal.mean() - \
-                                            young_rcc.mean()
-                _, p_value_under50 = stats.mannwhitneyu(
-                    young_normal, young_rcc
-                )
-
-                difference_over50 = old_normal.mean() - \
-                                            old_rcc.mean()
-                _, p_value_over50 = stats.mannwhitneyu(
-                    old_normal, old_rcc
-                )
-                fig.add_annotation(
-                    x=0.5,
-                    y=-0.4,
-                    xref='paper',
-                    yref='paper',
-                    text=f'mean differences & p-values:',
-                    showarrow=False,
-                    font=dict(size=22),
-                    align='center',
-                    xanchor='center',
-                    yanchor='top'
-                )
-                fig.add_annotation(
-                    x=0.5,
-                    y=-0.5,
+                    y=-0.7,
                     xref='paper',
                     yref='paper',
                     text=f'normal young - RCC young: {difference_under50:.5f} | p-value: {p_value_under50:.5e}' + ('*' if p_value_under50 < 0.05 else ''),
@@ -363,7 +195,7 @@ with col2:
                 )
                 fig.add_annotation(
                     x=0.5,
-                    y=-0.6,
+                    y=-0.8,
                     xref='paper',
                     yref='paper',
                     text=f'normal old - RCC old: {difference_over50:.5f} | p-value: {p_value_over50:.5e}' + ('*' if p_value_over50 < 0.05 else ''),
@@ -373,91 +205,10 @@ with col2:
                     xanchor='center',
                     yanchor='top'
                 )
-
-                significance1 = 'ns'
-                if p_value_under50 < 0.0005:
-                    significance1 = '***'
-                elif p_value_under50 < 0.005:
-                    significance1 = '**'
-                elif p_value_under50 < 0.05:
-                    significance1 = '*'
-
-                fig.add_shape(
-                    type="line",
-                    x0=0,
-                    y0=1.03,
-                    x1=1,
-                    y1=1.03,
-                    line=dict(color="black", width=2)
-                )
-                fig.add_shape(
-                    type="line",
-                    x0=0,
-                    y0=1.03,
-                    x1=0,
-                    y1=1.01,
-                    line=dict(color="black", width=2)
-                )
-                fig.add_shape(
-                    type="line",
-                    x0=1,
-                    y0=1.03,
-                    x1=1,
-                    y1=1.01,
-                    line=dict(color="black", width=2)
-                )
-                fig.add_annotation(
-                    x=0.5,
-                    y=1.08,
-                    font=dict(size=24),
-                    showarrow=False,
-                    text=significance1
-                )
-
-                significance2 = 'ns'
-                if p_value_over50 < 0.0005:
-                    significance2 = '***'
-                elif p_value_over50 < 0.005:
-                    significance2 = '**'
-                elif p_value_over50 < 0.05:
-                    significance2 = '*'
-
-                fig.add_shape(
-                    type="line",
-                    x0=2,
-                    y0=1.03,
-                    x1=3,
-                    y1=1.03,
-                    line=dict(color="black", width=2)
-                )
-                fig.add_shape(
-                    type="line",
-                    x0=2,
-                    y0=1.03,
-                    x1=2,
-                    y1=1.01,
-                    line=dict(color="black", width=2)
-                )
-                fig.add_shape(
-                    type="line",
-                    x0=3,
-                    y0=1.03,
-                    x1=3,
-                    y1=1.01,
-                    line=dict(color="black", width=2)
-                )
-                fig.add_annotation(
-                    x=2.5,
-                    y=1.08,
-                    font=dict(size=24),
-                    showarrow=False,
-                    text=significance2
-                )
-
                 st.plotly_chart(fig)
 
-
             if age:
+                if selected_subtype != 'All': df = df[df['subtype'] == selected_subtype]
                 rcc_40 = table.loc[(table["age_at_initial_pathologic_diagnosis"] >= 20) & (table["age_at_initial_pathologic_diagnosis"] < 40) & (table["rcc"] == "rcc"), cg_value].dropna()
                 normal_40 = table.loc[(table["age_at_initial_pathologic_diagnosis"] >= 20) & (table["age_at_initial_pathologic_diagnosis"] < 40) & (table["rcc"] == "normal"), cg_value].dropna()
                 rcc_50 = table.loc[(table["age_at_initial_pathologic_diagnosis"] >= 40) & (table["age_at_initial_pathologic_diagnosis"] < 50) & (table["rcc"] == "rcc"), cg_value].dropna()
@@ -511,7 +262,7 @@ with col2:
                     ),
                     yaxis=dict(
                         tickmode='linear',
-                        dtick=0.2,
+                        dtick=0.1,
                         showgrid = False,
                         tickfont=dict(size=22),
                     ),
@@ -527,6 +278,7 @@ with col2:
                 
 
             if age:
+                if selected_subtype != 'All': df = df[df['subtype'] == selected_subtype]
                 rcc_40 = table.loc[(table["age_at_initial_pathologic_diagnosis"] >= 20) & (table["age_at_initial_pathologic_diagnosis"] < 40) & (table["rcc"] == "rcc"), cg_value].dropna()
                 normal_40 = table.loc[(table["age_at_initial_pathologic_diagnosis"] >= 20) & (table["age_at_initial_pathologic_diagnosis"] < 40) & (table["rcc"] == "normal"), cg_value].dropna()
                 rcc_50 = table.loc[(table["age_at_initial_pathologic_diagnosis"] >= 40) & (table["age_at_initial_pathologic_diagnosis"] < 50) & (table["rcc"] == "rcc"), cg_value].dropna()
@@ -589,11 +341,11 @@ with col2:
                             "80-89 normal (N = " + str(under90_normal_count) + ")",
                             "80-89 RCC (N = " + str(under90_rcc_count) + ")",
                         ],
-                        tickfont=dict(family="Arial", size=20)
+                        tickfont=dict(size=16)
                     ),
                     yaxis=dict(
                         tickmode='linear',
-                        dtick=0.2,
+                        dtick=0.1,
                         showgrid = False,
                         tickfont=dict(size=22)
                     ),
@@ -607,7 +359,7 @@ with col2:
                     width = 1100
                 )
                 fig.update_layout(yaxis_range=[0,1.0])
-                fig.update_xaxes(tickangle=270, showline=True, linewidth=2, linecolor='black', mirror=True)
+                fig.update_xaxes(showline=True, linewidth=2, linecolor='black', mirror=True)
                 fig.update_yaxes(showline=True, linewidth=2, linecolor='black', mirror=True)
                 fig.update_xaxes(
                     categoryorder='category ascending'
@@ -632,7 +384,7 @@ with col2:
                 )
                 fig.add_annotation(
                     x=0.5,
-                    y=-0.74,
+                    y=-0.5,
                     xref='paper',
                     yref='paper',
                     text=f'p-values (RCC vs normal):',
@@ -644,7 +396,7 @@ with col2:
                 )
                 fig.add_annotation(
                     x=0.5,
-                    y=-0.84,
+                    y=-0.6,
                     xref='paper',
                     yref='paper',
                     text=f'20-39: {p_value_under40:.5e}' + ('*' if p_value_under40 < 0.05 else ''),
@@ -656,7 +408,7 @@ with col2:
                 )
                 fig.add_annotation(
                     x=0.5,
-                    y=-0.94,
+                    y=-0.7,
                     xref='paper',
                     yref='paper',
                     text=f'40-49: {p_value_under50:.5e}' + ('*' if p_value_under50 < 0.05 else ''),
@@ -668,7 +420,7 @@ with col2:
                 )
                 fig.add_annotation(
                     x=0.5,
-                    y=-1.04,
+                    y=-0.8,
                     xref='paper',
                     yref='paper',
                     text=f'50-59: {p_value_under60:.5e}' + ('*' if p_value_under60 < 0.05 else ''),
@@ -680,7 +432,7 @@ with col2:
                 )
                 fig.add_annotation(
                     x=0.5,
-                    y=-1.14,
+                    y=-0.9,
                     xref='paper',
                     yref='paper',
                     text=f'60-69: {p_value_under70:.5e}' + ('*' if p_value_under70 < 0.05 else ''),
@@ -692,7 +444,7 @@ with col2:
                 )
                 fig.add_annotation(
                     x=0.5,
-                    y=-1.24,
+                    y=-1.00,
                     xref='paper',
                     yref='paper',
                     text=f'70-79: {p_value_under80:.5e}' + ('*' if p_value_under80 < 0.05 else ''),
@@ -704,7 +456,7 @@ with col2:
                 )
                 fig.add_annotation(
                     x=0.5,
-                    y=-1.34,
+                    y=-1.1,
                     xref='paper',
                     yref='paper',
                     text=f'80-89: {p_value_under90:.5e}' + ('*' if p_value_under90 < 0.05 else ''),
@@ -715,8 +467,134 @@ with col2:
                     yanchor='top'
                 )
                 st.plotly_chart(fig)
+            
+            if lts:
+                    if selected_subtype != 'All': df = df[df['subtype'] == selected_subtype]
+                    undercount = (df['days_to_death'] <= 1825 ).sum()
+                    overcount = (df['days_to_death'] > 1825).sum()
+                    fig = go.Figure()
+                    fig.add_trace(
+                        go.Box(y=df[df['days_to_death'] <= 1825][cg_value], x=[0] * undercount, boxpoints="all", jitter=0.2, marker=dict(color="darkturquoise"), showlegend=False)
+                    )
+                    fig.add_trace(
+                        go.Box(y=df[df['days_to_death'] > 1825][cg_value], x=[1] * overcount, boxpoints="all", jitter=0.2, marker=dict(color="mediumpurple"), showlegend=False)
+                    )
+                    fig.update_layout(
+                        title='long term survivorship plot of ' + str(cg_value),
+                        title_font=dict(size=30),
+                        yaxis_title='<b>methylation ratio</b>',
+                        yaxis_title_font=dict(size=22),
+                        xaxis_title='<b>years until death</b>',
+                        xaxis_title_font=dict(size=22),
+                        xaxis=dict(
+                            tickmode='array',
+                            tickvals=[0, 1],
+                            ticktext=[
+                                "under 5 years<br>(N = " + str(undercount) + ")",
+                                "over 5 years<br>(N = " + str(overcount) + ")",
+                            ],
+                            tickfont=dict(size=20)
+                        ),
+                        yaxis=dict(
+                            tickmode='linear',
+                            dtick=0.1,
+                            showgrid = False,
+                            tickfont=dict(size=22)
+                        ),
+                        plot_bgcolor='rgba(0, 0, 0, 0)',
+                        font=dict(
+                            family="Arial",
+                            size=24
+                        ),
+                        margin=dict(r=20, b=170),
+                        height=600,
+                        width=1000
+                    )
+                    fig.update_layout(yaxis_range=[0,1.0])
+                    fig.update_xaxes(showline=True, linewidth=2, linecolor='black', mirror=True)
+                    fig.update_yaxes(showline=True, linewidth=2, linecolor='black', mirror=True)
+                    fig.update_xaxes(
+                        categoryorder='category ascending'
+                    )
+
+                    less_days_to_death = table.loc[table["days_to_death"] <= 1825, cg_value].dropna()
+                    more_days_to_death = table.loc[table["days_to_death"] > 1825, cg_value].dropna()
+
+                    difference = less_days_to_death.mean() - more_days_to_death.mean()
+                    _, p_value = stats.mannwhitneyu(less_days_to_death, more_days_to_death)
+                    fig.add_annotation(
+                        x=0.5,
+                        y=-0.4,
+                        xref='paper',
+                        yref='paper',
+                        text=f'Mean difference (under 5 years - over 5 years): {difference:.5f} | p-value: {p_value:.5e}' + ('*' if p_value < 0.05 else ''),
+                        showarrow=False,
+                        font=dict(size=22),
+                        align='center',
+                        xanchor='center',
+                        yanchor='top'
+                    )
+                    st.plotly_chart(fig)
+
+            if stage:
+                if selected_subtype != 'All': df = df[df['subtype'] == selected_subtype]
+                s1count = (df['stage'] == 'stage i').sum()
+                s2count = (df['stage'] == 'stage ii').sum()
+                s3count = (df['stage'] == 'stage iii').sum()
+                s4count = (df['stage'] == 'stage iv').sum()
+                normalcount = (df['rcc'] == 'normal').sum()
+                fig = go.Figure()
+                fig.add_trace(
+                    go.Box(y=df[cg_value], x=df['stage'], name="stage", boxpoints="all", jitter=0.2, marker=dict(color="mediumpurple"), showlegend=False)
+                )
+
+                fig.add_trace(
+                    go.Box(y=df[df['rcc'] == 'normal'][cg_value], name="normal", x=df[df['rcc'] == 'normal']['rcc'], boxpoints="all", jitter=0.2, marker=dict(color="darkturquoise"), showlegend=False)
+                )
+                fig.update_layout(
+                    title='stage plot of ' + str(cg_value),
+                    title_font=dict(size=30),
+                    yaxis_title='<b>methylation ratio</b>',
+                    yaxis_title_font=dict(size=22),
+                    xaxis_title='<b>stage</b>',
+                    xaxis_title_font=dict(size=22),
+                    xaxis=dict(
+                        tickmode='array',
+                        tickvals=[0, 1, 2, 3, 4],
+                        ticktext=[
+                            "normal<br>(N = " + str(normalcount) + ")",
+                            "stage i<br>(N = " + str(s1count) + ")",
+                            "stage ii<br>(N = " + str(s2count) + ")",
+                            "stage iii<br>(N = " + str(s3count) + ")",
+                            "stage iv<br>(N = " + str(s4count) + ")"
+                        ],
+                        tickfont=dict(size=19)
+                    ),
+                    font=dict(
+                        family="Arial",
+                        size=24
+                    ), 
+                    yaxis=dict(
+                        tickmode='linear',
+                        dtick=0.1,
+                        showgrid = False,
+                        tickfont=dict(size=22)
+                    ),
+                    plot_bgcolor='rgba(0, 0, 0, 0)',
+                    margin=dict(r=20),
+                    height=600,
+                    width=1000
+                )
+                fig.update_layout(yaxis_range=[0,1.0])
+                fig.update_xaxes(showline=True, linewidth=2, linecolor='black', mirror=True)
+                fig.update_yaxes(showline=True, linewidth=2, linecolor='black', mirror=True)
+                fig.update_xaxes(
+                    categoryorder='category ascending'
+                )
+                st.plotly_chart(fig)
 
             if gender:
+                if selected_subtype != 'All': df = df[df['subtype'] == selected_subtype]
                 male_rcc_count = ((df['gender'] == 'male') & (df['rcc'] == 'rcc')).sum()
                 male_normal_count = ((df['gender'] == 'male') & (df['rcc'] == 'normal')).sum()
                 female_rcc_count = ((df['gender'] == 'female') & (df['rcc'] == 'rcc')).sum()
@@ -754,7 +632,7 @@ with col2:
                     ),
                     yaxis=dict(
                         tickmode='linear',
-                        dtick=0.2,
+                        dtick=0.1,
                         showgrid = False,
                         tickfont=dict(size=22)
                     ),
@@ -767,7 +645,7 @@ with col2:
                     height=750,
                     width=1000
                 )
-                fig.update_layout(yaxis_range=[0,1.1])
+                fig.update_layout(yaxis_range=[0,1.0])
                 fig.update_xaxes(showline=True, linewidth=2, linecolor='black', mirror=True)
                 fig.update_yaxes(showline=True, linewidth=2, linecolor='black', mirror=True)
 
@@ -839,191 +717,9 @@ with col2:
                     xanchor='center',
                     yanchor='top'
                 )
-
-                significance1 = 'ns'
-                if p_value_normal_male_vs_female < 0.0005:
-                    significance1 = '***'
-                elif p_value_normal_male_vs_female < 0.005:
-                    significance1 = '**'
-                elif p_value_normal_male_vs_female < 0.05:
-                    significance1 = '*'
-
-                fig.add_shape(
-                    type="line",
-                    x0=0,
-                    y0=1.03,
-                    x1=1,
-                    y1=1.03,
-                    line=dict(color="black", width=2)
-                )
-                fig.add_shape(
-                    type="line",
-                    x0=0,
-                    y0=1.03,
-                    x1=0,
-                    y1=1.01,
-                    line=dict(color="black", width=2)
-                )
-                fig.add_shape(
-                    type="line",
-                    x0=1,
-                    y0=1.03,
-                    x1=1,
-                    y1=1.01,
-                    line=dict(color="black", width=2)
-                )
                 fig.add_annotation(
                     x=0.5,
-                    y=1.08,
-                    font=dict(size=24),
-                    showarrow=False,
-                    text=significance1
-                )
-
-                significance2 = 'ns'
-                if p_value_rcc_male_vs_female < 0.0005:
-                    significance2 = '***'
-                elif p_value_rcc_male_vs_female < 0.005:
-                    significance2 = '**'
-                elif p_value_rcc_male_vs_female < 0.05:
-                    significance2 = '*'
-
-                fig.add_shape(
-                    type="line",
-                    x0=2,
-                    y0=1.03,
-                    x1=3,
-                    y1=1.03,
-                    line=dict(color="black", width=2)
-                )
-                fig.add_shape(
-                    type="line",
-                    x0=2,
-                    y0=1.03,
-                    x1=2,
-                    y1=1.01,
-                    line=dict(color="black", width=2)
-                )
-                fig.add_shape(
-                    type="line",
-                    x0=3,
-                    y0=1.03,
-                    x1=3,
-                    y1=1.01,
-                    line=dict(color="black", width=2)
-                )
-                fig.add_annotation(
-                    x=2.5,
-                    y=1.08,
-                    font=dict(size=24),
-                    showarrow=False,
-                    text=significance2
-                )
-
-                st.plotly_chart(fig)
-
-            if gender:
-                male_rcc_count = ((df['gender'] == 'male') & (df['rcc'] == 'rcc')).sum()
-                male_normal_count = ((df['gender'] == 'male') & (df['rcc'] == 'normal')).sum()
-                female_rcc_count = ((df['gender'] == 'female') & (df['rcc'] == 'rcc')).sum()
-                female_normal_count = ((df['gender'] == 'female') & (df['rcc'] == 'normal')).sum()
-                fig = go.Figure()
-                rcc_male = df[(df['gender'] == 'male') & (df['rcc'] == 'rcc')]
-                normal_male = df[(df['gender'] == 'male') & (df['rcc'] == 'normal')]
-                rcc_female = df[(df['gender'] == 'female') & (df['rcc'] == 'rcc')]
-                normal_female = df[(df['gender'] == 'female') & (df['rcc'] == 'normal')]
-                fig.add_trace(go.Box(y=normal_male[cg_value], x=[0] * len(normal_male),
-                                    boxpoints="all", jitter=0.2, marker=dict(color="darkturquoise"), showlegend=False))
-                fig.add_trace(go.Box(y=normal_female[cg_value], x=[2] * len(normal_female),
-                                    boxpoints="all", jitter=0.2, marker=dict(color="darkturquoise"), showlegend=False))
-                fig.add_trace(go.Box(y=rcc_male[cg_value], x=[1] * len(rcc_male),
-                     boxpoints="all", jitter=0.2, marker=dict(color="mediumpurple"), showlegend=False))
-                fig.add_trace(go.Box(y=rcc_female[cg_value], x=[3] * len(rcc_female),
-                                    boxpoints="all", jitter=0.2, marker=dict(color="mediumpurple"), showlegend=False))
-                fig.update_layout(
-                    title='gender plot of ' + str(cg_value),
-                    title_font=dict(size=30),
-                    yaxis_title='<b>methylation ratio</b>',
-                    yaxis_title_font=dict(size=22),
-                    xaxis_title='<b>gender and condition</b>',
-                    xaxis_title_font=dict(size=22),
-                    xaxis=dict(
-                        tickmode='array',
-                        tickvals=[0, 2, 1, 3],
-                        ticktext=[
-                            "normal male<br>(N = " + str(male_normal_count) + ")",
-                            "normal female<br>(N = " + str(female_normal_count) + ")",
-                            "RCC male<br>(N = " + str(male_rcc_count) + ")",
-                            "RCC female<br>(N = " + str(female_rcc_count) + ")",
-                        ],
-                        tickfont=dict(size=20)
-                    ),
-                    yaxis=dict(
-                        tickmode='linear',
-                        dtick=0.2,
-                        showgrid = False,
-                        tickfont=dict(size=22)
-                    ),
-                    plot_bgcolor='rgba(0, 0, 0, 0)',
-                    font=dict(
-                        family="Arial",
-                        size=24
-                    ), 
-                    margin=dict(r=20, b=330, l=20),       
-                    height=750,
-                    width=1000
-                )
-                fig.update_layout(yaxis_range=[0,1.1])
-                fig.update_xaxes(showline=True, linewidth=2, linecolor='black', mirror=True)
-                fig.update_yaxes(showline=True, linewidth=2, linecolor='black', mirror=True)
-
-                rcc_male = df[(df['gender'] == 'male') & (df['rcc'] == 'rcc')]
-                normal_male = df[(df['gender'] == 'male') & (df['rcc'] == 'normal')]
-                rcc_female = df[(df['gender'] == 'female') & (df['rcc'] == 'rcc')]
-                normal_female = df[(df['gender'] == 'female') & (df['rcc'] == 'normal')]
-
-                rcc_male_values = rcc_male[cg_value].dropna()
-                rcc_female_values = rcc_female[cg_value].dropna()
-                normal_male_values = normal_male[cg_value].dropna()
-                normal_female_values = normal_female[cg_value].dropna()
-
-                difference_rcc_male_vs_female = rcc_female_values.mean() - \
-                                rcc_male_values.mean()
-                _, p_value_rcc_male_vs_female = stats.mannwhitneyu(
-                    rcc_male_values, rcc_female_values
-                )
-                difference_normal_male_vs_female = normal_female_values.mean() - \
-                                normal_male_values.mean()
-                _, p_value_normal_male_vs_female = stats.mannwhitneyu(
-                    normal_male_values, normal_female_values
-                )
-                difference_male_vs_normal = normal_male_values.mean() - \
-                                            rcc_male_values.mean()
-                _, p_value_male_vs_normal = stats.mannwhitneyu(
-                    normal_male_values,
-                    rcc_male_values
-                )
-
-                difference_female_vs_normal = normal_female_values.mean() - \
-                                            rcc_female_values.mean()
-                _, p_value_female_vs_normal = stats.mannwhitneyu(
-                    normal_female_values, rcc_female_values
-                )
-                fig.add_annotation(
-                    x=0.5,
-                    y=-0.4,
-                    xref='paper',
-                    yref='paper',
-                    text=f'mean differences & p-values:',
-                    showarrow=False,
-                    font=dict(size=22),
-                    align='center',
-                    xanchor='center',
-                    yanchor='top'
-                )
-                fig.add_annotation(
-                    x=0.5,
-                    y=-0.5,
+                    y=-0.7,
                     xref='paper',
                     yref='paper',
                     text=f'normal male - RCC male: {difference_male_vs_normal:.5f} | p-value: {p_value_male_vs_normal:.5e}' + ('*' if p_value_male_vs_normal < 0.05 else ''),
@@ -1035,7 +731,7 @@ with col2:
                 )
                 fig.add_annotation(
                     x=0.5,
-                    y=-0.6,
+                    y=-0.8,
                     xref='paper',
                     yref='paper',
                     text=f'normal female - RCC female: {difference_female_vs_normal:.5f} | p-value: {p_value_female_vs_normal:.5e}' + ('*' if p_value_female_vs_normal < 0.05 else ''),
@@ -1045,254 +741,6 @@ with col2:
                     xanchor='center',
                     yanchor='top'
                 )
-
-                significance1 = 'ns'
-                if p_value_male_vs_normal < 0.0005:
-                    significance1 = '***'
-                elif p_value_male_vs_normal < 0.005:
-                    significance1 = '**'
-                elif p_value_male_vs_normal < 0.05:
-                    significance1 = '*'
-
-                fig.add_shape(
-                    type="line",
-                    x0=0,
-                    y0=1.03,
-                    x1=1,
-                    y1=1.03,
-                    line=dict(color="black", width=2)
-                )
-                fig.add_shape(
-                    type="line",
-                    x0=0,
-                    y0=1.03,
-                    x1=0,
-                    y1=1.01,
-                    line=dict(color="black", width=2)
-                )
-                fig.add_shape(
-                    type="line",
-                    x0=1,
-                    y0=1.03,
-                    x1=1,
-                    y1=1.01,
-                    line=dict(color="black", width=2)
-                )
-                fig.add_annotation(
-                    x=0.5,
-                    y=1.08,
-                    font=dict(size=24),
-                    showarrow=False,
-                    text=significance1
-                )
-
-                significance2 = 'ns'
-                if p_value_female_vs_normal < 0.0005:
-                    significance2 = '***'
-                elif p_value_female_vs_normal < 0.005:
-                    significance2 = '**'
-                elif p_value_female_vs_normal < 0.05:
-                    significance2 = '*'
-
-                fig.add_shape(
-                    type="line",
-                    x0=2,
-                    y0=1.03,
-                    x1=3,
-                    y1=1.03,
-                    line=dict(color="black", width=2)
-                )
-                fig.add_shape(
-                    type="line",
-                    x0=2,
-                    y0=1.03,
-                    x1=2,
-                    y1=1.01,
-                    line=dict(color="black", width=2)
-                )
-                fig.add_shape(
-                    type="line",
-                    x0=3,
-                    y0=1.03,
-                    x1=3,
-                    y1=1.01,
-                    line=dict(color="black", width=2)
-                )
-                fig.add_annotation(
-                    x=2.5,
-                    y=1.08,
-                    font=dict(size=24),
-                    showarrow=False,
-                    text=significance2
-                )
-
                 st.plotly_chart(fig)
 
-            if lts:
-                undercount = (df['days_to_death'] <= 1825 ).sum()
-                overcount = (df['days_to_death'] > 1825).sum()
-                fig = go.Figure()
-                fig.add_trace(
-                    go.Box(y=df[df['days_to_death'] <= 1825][cg_value], x=[0] * undercount, boxpoints="all", jitter=0.2, marker=dict(color="darkturquoise"), showlegend=False)
-                )
-                fig.add_trace(
-                    go.Box(y=df[df['days_to_death'] > 1825][cg_value], x=[1] * overcount, boxpoints="all", jitter=0.2, marker=dict(color="mediumpurple"), showlegend=False)
-                )
                 
-                fig.update_layout(
-                    title='long term survivorship plot of ' + str(cg_value),
-                    title_font=dict(size=30),
-                    yaxis_title='<b>methylation ratio</b>',
-                    yaxis_title_font=dict(size=22),
-                    xaxis_title='<b>years until death</b>',
-                    xaxis_title_font=dict(size=22),
-                    xaxis=dict(
-                        tickmode='array',
-                        tickvals=[0, 1],
-                        ticktext=[
-                            "under 5 years<br>(N = " + str(undercount) + ")",
-                            "over 5 years<br>(N = " + str(overcount) + ")",
-                        ],
-                        tickfont=dict(size=20)
-                    ),
-                    yaxis=dict(
-                        tickmode='linear',
-                        dtick=0.2,
-                        showgrid = False,
-                        tickfont=dict(size=22)
-                    ),
-                    plot_bgcolor='rgba(0, 0, 0, 0)',
-                    font=dict(
-                        family="Arial",
-                        size=24
-                    ),
-                    margin=dict(r=20, b=170),
-                    height=600,
-                    width=1000
-                )
-                fig.update_layout(yaxis_range=[0,1.1])
-                fig.update_xaxes(showline=True, linewidth=2, linecolor='black', mirror=True)
-                fig.update_yaxes(showline=True, linewidth=2, linecolor='black', mirror=True)
-                fig.update_xaxes(
-                    categoryorder='category ascending'
-                )
-
-                less_days_to_death = table.loc[table["days_to_death"] <= 1825, cg_value].dropna()
-                more_days_to_death = table.loc[table["days_to_death"] > 1825, cg_value].dropna()
-                difference = less_days_to_death.mean() - more_days_to_death.mean()
-                _, p_value = stats.mannwhitneyu(less_days_to_death, more_days_to_death)
-
-                fig.add_annotation(
-                    x=0.5,
-                    y=-0.4,
-                    xref='paper',
-                    yref='paper',
-                    text=f'Mean difference (under 5 years - over 5 years): {difference:.5f} | p-value: {p_value:.5e}' + ('*' if p_value < 0.05 else ''),
-                    showarrow=False,
-                    font=dict(size=22),
-                    align='center',
-                    xanchor='center',
-                    yanchor='top'
-                )
-
-                significance = 'ns'
-                if p_value < 0.0005:
-                    significance = '***'
-                elif p_value < 0.005:
-                    significance = '**'
-                elif p_value < 0.05:
-                    significance = '*'
-
-                fig.add_shape(
-                    type="line",
-                    x0=0,
-                    y0=1.03,
-                    x1=1,
-                    y1=1.03,
-                    line=dict(color="black", width=2)
-                )
-                fig.add_shape(
-                    type="line",
-                    x0=0,
-                    y0=1.03,
-                    x1=0,
-                    y1=1.01,
-                    line=dict(color="black", width=2)
-                )
-                fig.add_shape(
-                    type="line",
-                    x0=1,
-                    y0=1.03,
-                    x1=1,
-                    y1=1.01,
-                    line=dict(color="black", width=2)
-                )
-                fig.add_annotation(
-                    x=0.5,
-                    y=1.08,
-                    font=dict(size=24),
-                    showarrow=False,
-                    text=significance
-                )
-
-                st.plotly_chart(fig)
-
-            if stage:
-                s1count = (df['stage'] == 'stage i').sum()
-                s2count = (df['stage'] == 'stage ii').sum()
-                s3count = (df['stage'] == 'stage iii').sum()
-                s4count = (df['stage'] == 'stage iv').sum()
-                normalcount = (df['rcc'] == 'normal').sum()
-                fig = go.Figure()
-                fig.add_trace(
-                    go.Box(y=df[cg_value], x=df['stage'], name="stage", boxpoints="all", jitter=0.2, marker=dict(color="mediumpurple"), showlegend=False)
-                )
-
-                fig.add_trace(
-                    go.Box(y=df[df['rcc'] == 'normal'][cg_value], name="normal", x=df[df['rcc'] == 'normal']['rcc'], boxpoints="all", jitter=0.2, marker=dict(color="darkturquoise"), showlegend=False)
-                )
-                fig.update_layout(
-                    title='stage plot of ' + str(cg_value),
-                    title_font=dict(size=30),
-                    yaxis_title='<b>methylation ratio</b>',
-                    yaxis_title_font=dict(size=22),
-                    xaxis_title='<b>stage</b>',
-                    xaxis_title_font=dict(size=22),
-                    xaxis=dict(
-                        tickmode='array',
-                        tickvals=[0, 1, 2, 3, 4],
-                        ticktext=[
-                            "normal<br>(N = " + str(normalcount) + ")",
-                            "stage i<br>(N = " + str(s1count) + ")",
-                            "stage ii<br>(N = " + str(s2count) + ")",
-                            "stage iii<br>(N = " + str(s3count) + ")",
-                            "stage iv<br>(N = " + str(s4count) + ")"
-                        ],
-                        tickfont=dict(size=19)
-                    ),
-                    font=dict(
-                        family="Arial",
-                        size=24
-                    ), 
-                    yaxis=dict(
-                        tickmode='linear',
-                        dtick=0.2,
-                        showgrid = False,
-                        tickfont=dict(size=22)
-                    ),
-                    plot_bgcolor='rgba(0, 0, 0, 0)',
-                    margin=dict(r=20),
-                    height=600,
-                    width=1000
-                )
-                fig.update_layout(yaxis_range=[0,1.0])
-                fig.update_xaxes(showline=True, linewidth=2, linecolor='black', mirror=True)
-                fig.update_yaxes(showline=True, linewidth=2, linecolor='black', mirror=True)
-                fig.update_xaxes(
-                    categoryorder='category ascending'
-                )
-                st.plotly_chart(fig)
-
-            
-
-            
