@@ -7,10 +7,12 @@ from pathlib import Path
 import warnings
 warnings.filterwarnings("ignore")
 
-csv_path = Path(r'/Users/abhinav/Documents/GitHub/Research/Research/data/kipan_clin_meth.tsv')
-pickle_path = Path(r'/Users/abhinav/Documents/GitHub/Research/Research/data/pickle_file.pk1')
+@st.cache_data
+def load_data():
+    pickle_path = Path(r'/Users/abhinav/Documents/GitHub/Research/Research/data/pickle_file.pk1')
+    return pd.read_pickle(pickle_path)
 
-table = pd.read_pickle(pickle_path)
+table = load_data()
 df = table.dropna()
 
 search_pressed = False
@@ -24,11 +26,13 @@ with st.sidebar:
         options=subtype_options,
         index=0
     )
-    cg_value = st.text_input('Search CG Value', placeholder='cgXXXXXXXX')
-    age = st.checkbox("Age", key='age')
-    lts = st.checkbox("Long Term Survivorship", key='lts')
-    stage = st.checkbox("Stage", key='stage')
-    gender = st.checkbox("Gender", key='gender')
+    cg_value = st.text_input('Search CG Value', 
+        placeholder='cgXXXXXXXX',
+        value='cg00000029')
+    age = st.checkbox("Age", key='age', value=True)
+    lts = st.checkbox("Long Term Survivorship", key='lts', value=True)
+    stage = st.checkbox("Stage", key='stage', value=True)
+    gender = st.checkbox("Gender", key='gender', value=True)
     search_pressed = st.button('Search')
 
 if search_pressed == True:
