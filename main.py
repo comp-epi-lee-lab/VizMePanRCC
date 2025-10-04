@@ -7,17 +7,17 @@ from pathlib import Path
 import warnings
 warnings.filterwarnings("ignore")
 
+st.set_page_config(layout="wide")
+
 @st.cache_data
 def load_data():
-    pickle_path = Path(r'/Users/abhinav/Documents/GitHub/Research/Research/data/pickle_file.pk1')
+    pickle_path = Path(__file__).parent /'data'/'pickle_file.pk1'
     return pd.read_pickle(pickle_path)
 
 table = load_data()
 df = table.dropna()
 
 search_pressed = False
-
-st.set_page_config(layout="wide")
 
 with st.sidebar:
     subtype_options = ['All'] + ['kirc', 'kirp', 'kich']
