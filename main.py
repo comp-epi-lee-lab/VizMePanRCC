@@ -17,8 +17,6 @@ def load_data():
 table = load_data()
 df = table.dropna()
 
-search_pressed = False
-
 with st.sidebar:
     subtype_options = ['All'] + ['kirc', 'kirp', 'kich']
     selected_subtype = st.selectbox(
@@ -34,6 +32,8 @@ with st.sidebar:
     stage = st.checkbox("Stage", key='stage', value=False)
     gender = st.checkbox("Gender", key='gender', value=False)
     search_pressed = st.button('Search')
+
+search_pressed = True
 
 if search_pressed == True:
     if cg_value not in table.columns:
