@@ -11,7 +11,7 @@ st.set_page_config(layout="wide")
 
 @st.cache_data
 def load_data():
-    pickle_path = Path(__file__).parent /'data'/'pickle_file.pk1'
+    pickle_path = Path(__file__).parent/'data'/'pickle_file.pk1'
     return pd.read_pickle(pickle_path)
 
 table = load_data()
@@ -24,15 +24,15 @@ with st.sidebar:
     selected_subtype = st.selectbox(
         'Select RCC Subtype',
         options=subtype_options,
-        index=0
+        index=1
     )
     cg_value = st.text_input('Search CG Value', 
         placeholder='cgXXXXXXXX',
-        value='cg00000029')
+        value='cg02275016')
     age = st.checkbox("Age", key='age', value=True)
-    lts = st.checkbox("Long Term Survivorship", key='lts', value=True)
-    stage = st.checkbox("Stage", key='stage', value=True)
-    gender = st.checkbox("Gender", key='gender', value=True)
+    lts = st.checkbox("Long Term Survivorship", key='lts', value=False)
+    stage = st.checkbox("Stage", key='stage', value=False)
+    gender = st.checkbox("Gender", key='gender', value=False)
     search_pressed = st.button('Search')
 
 if search_pressed == True:
