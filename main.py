@@ -203,11 +203,16 @@ if search_pressed == True:
             rcc_o70 = df.loc[(df["age_at_initial_pathologic_diagnosis"] >= 70) & (df["rcc"] == "rcc"), cg_value].dropna()
             normal_o70 = df.loc[(df["age_at_initial_pathologic_diagnosis"] >= 70) & (df["rcc"] == "normal"), cg_value].dropna()
 
-            under40_count = df.loc[(df["age_at_initial_pathologic_diagnosis"] >= 20) & (df["age_at_initial_pathologic_diagnosis"] < 40), cg_value].count()
-            under50_count = df.loc[(df["age_at_initial_pathologic_diagnosis"] >= 40) & (df["age_at_initial_pathologic_diagnosis"] < 50), cg_value].count()
-            under60_count = df.loc[(df["age_at_initial_pathologic_diagnosis"] >= 50) & (df["age_at_initial_pathologic_diagnosis"] < 60), cg_value].count()
-            under70_count = df.loc[(df["age_at_initial_pathologic_diagnosis"] >= 60) & (df["age_at_initial_pathologic_diagnosis"] < 70), cg_value].count()
-            over70_count = df.loc[(df["age_at_initial_pathologic_diagnosis"] >= 70), cg_value].count()
+            under40_rcc_count = (((df['age_at_initial_pathologic_diagnosis'] >= 20) & (df['age_at_initial_pathologic_diagnosis'] < 40)) & (df['rcc'] == 'rcc')).sum()
+            under40_normal_count = (((df['age_at_initial_pathologic_diagnosis'] >= 20) & (df['age_at_initial_pathologic_diagnosis'] < 40)) & (df['rcc'] == 'normal')).sum()
+            under50_rcc_count = (((df['age_at_initial_pathologic_diagnosis'] >= 40) &( df['age_at_initial_pathologic_diagnosis'] < 50)) & (df['rcc'] == 'rcc')).sum()
+            under50_normal_count = (((df['age_at_initial_pathologic_diagnosis'] >= 40) & (df['age_at_initial_pathologic_diagnosis'] < 50)) & (df['rcc'] == 'normal')).sum()
+            under60_rcc_count = (((df['age_at_initial_pathologic_diagnosis'] >= 50) & (df['age_at_initial_pathologic_diagnosis'] < 60)) & (df['rcc'] == 'rcc')).sum()
+            under60_normal_count = (((df['age_at_initial_pathologic_diagnosis'] >= 50) & (df['age_at_initial_pathologic_diagnosis'] < 60)) & (df['rcc'] == 'normal')).sum()
+            under70_rcc_count = (((df['age_at_initial_pathologic_diagnosis'] >= 60) & (df['age_at_initial_pathologic_diagnosis'] < 70)) & (df['rcc'] == 'rcc')).sum()
+            under70_normal_count = (((df['age_at_initial_pathologic_diagnosis'] >= 60) & (df['age_at_initial_pathologic_diagnosis'] < 70)) & (df['rcc'] == 'normal')).sum()
+            over70_rcc_count = ((df['age_at_initial_pathologic_diagnosis'] >= 70) & (df['rcc'] == 'rcc')).sum()
+            over70_normal_count = ((df['age_at_initial_pathologic_diagnosis'] >= 70) & (df['rcc'] == 'normal')).sum()
 
             under40_rcc_mean = rcc_40.mean()
             under40_normal_mean = normal_40.mean()
@@ -221,7 +226,7 @@ if search_pressed == True:
             over70_normal_mean = normal_o70.mean()
             mean_values_rcc = [ under40_rcc_mean, under50_rcc_mean, under60_rcc_mean, under70_rcc_mean, over70_rcc_mean]
             mean_values_normal = [under40_normal_mean, under50_normal_mean, under60_normal_mean, under70_normal_mean, over70_normal_mean]
-            labels = ["20-39<br>(N = " + str(under40_count) + ")", "40-49<br>(N = " + str(under50_count) + ")", "50-59<br>(N = " + str(under60_count) + ")", "60-69<br>(N = " + str(under70_count) + ")", "70+<br>(N = " + str(over70_count) + ")"]
+            labels = ["20-39<br>(N = " + str(under40_normal_count) + "|" + str(under40_rcc_count) + ")", "40-49<br>(N = " + str(under50_normal_count) + "|" + str(under50_rcc_count) + ")", "50-59<br>(N = " + str(under60_normal_count) + "|" + str(under60_rcc_count) + ")", "60-69<br>(N = " + str(under70_normal_count) + "|" + str(under70_rcc_count) + ")", "70+<br>(N = " + str(over70_normal_count) + "|" + str(over70_rcc_count) + ")"]            
             fig = go.Figure()
             fig.add_trace(go.Scatter(x=labels, y=mean_values_normal, mode='lines+markers', name='Normal', line=dict(color='darkturquoise'), marker=dict(size=12)))
             fig.add_trace(go.Scatter(x=labels, y=mean_values_rcc, mode='lines+markers', name='RCC', line=dict(color='mediumpurple'), marker=dict(size=12)))
