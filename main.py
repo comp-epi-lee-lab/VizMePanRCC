@@ -200,17 +200,14 @@ if search_pressed == True:
             normal_60 = df.loc[(df["age_at_initial_pathologic_diagnosis"] >= 50) & (df["age_at_initial_pathologic_diagnosis"] < 60) & (df["rcc"] == "normal"), cg_value].dropna()
             rcc_70 = df.loc[(df["age_at_initial_pathologic_diagnosis"] >= 60) & (df["age_at_initial_pathologic_diagnosis"] < 70) & (df["rcc"] == "rcc"), cg_value].dropna()
             normal_70 = df.loc[(df["age_at_initial_pathologic_diagnosis"] >= 60) & (df["age_at_initial_pathologic_diagnosis"] < 70) & (df["rcc"] == "normal"), cg_value].dropna()
-            rcc_80 = df.loc[(df["age_at_initial_pathologic_diagnosis"] >= 70) & (df["age_at_initial_pathologic_diagnosis"] < 80) & (df["rcc"] == "rcc"), cg_value].dropna()
-            normal_80 = df.loc[(df["age_at_initial_pathologic_diagnosis"] >= 70) & (df["age_at_initial_pathologic_diagnosis"] < 80) & (df["rcc"] == "normal"), cg_value].dropna()
-            rcc_90 = df.loc[(df["age_at_initial_pathologic_diagnosis"] >= 80) & (df["age_at_initial_pathologic_diagnosis"] < 90) & (df["rcc"] == "rcc"), cg_value].dropna()
-            normal_90 = df.loc[(df["age_at_initial_pathologic_diagnosis"] >= 80) & (df["age_at_initial_pathologic_diagnosis"] < 90) & (df["rcc"] == "normal"), cg_value].dropna()
+            rcc_o70 = df.loc[(df["age_at_initial_pathologic_diagnosis"] >= 70) & (df["rcc"] == "rcc"), cg_value].dropna()
+            normal_o70 = df.loc[(df["age_at_initial_pathologic_diagnosis"] >= 70) & (df["rcc"] == "normal"), cg_value].dropna()
 
             under40_count = df.loc[(df["age_at_initial_pathologic_diagnosis"] >= 20) & (df["age_at_initial_pathologic_diagnosis"] < 40), cg_value].count()
             under50_count = df.loc[(df["age_at_initial_pathologic_diagnosis"] >= 40) & (df["age_at_initial_pathologic_diagnosis"] < 50), cg_value].count()
             under60_count = df.loc[(df["age_at_initial_pathologic_diagnosis"] >= 50) & (df["age_at_initial_pathologic_diagnosis"] < 60), cg_value].count()
             under70_count = df.loc[(df["age_at_initial_pathologic_diagnosis"] >= 60) & (df["age_at_initial_pathologic_diagnosis"] < 70), cg_value].count()
-            under80_count = df.loc[(df["age_at_initial_pathologic_diagnosis"] >= 70) & (df["age_at_initial_pathologic_diagnosis"] < 80), cg_value].count()
-            under90_count = df.loc[(df["age_at_initial_pathologic_diagnosis"] >= 80) & (df["age_at_initial_pathologic_diagnosis"] < 90), cg_value].count()
+            over70_count = df.loc[(df["age_at_initial_pathologic_diagnosis"] >= 70), cg_value].count()
 
             under40_rcc_mean = rcc_40.mean()
             under40_normal_mean = normal_40.mean()
@@ -220,13 +217,11 @@ if search_pressed == True:
             under60_normal_mean = normal_60.mean()
             under70_rcc_mean = rcc_70.mean()
             under70_normal_mean = normal_70.mean()
-            under80_rcc_mean = rcc_80.mean()
-            under80_normal_mean = normal_80.mean()
-            under90_rcc_mean = rcc_90.mean()
-            under90_normal_mean = normal_90.mean()
-            mean_values_rcc = [ under40_rcc_mean, under50_rcc_mean, under60_rcc_mean, under70_rcc_mean, under80_rcc_mean, under90_rcc_mean]
-            mean_values_normal = [under40_normal_mean, under50_normal_mean, under60_normal_mean, under70_normal_mean, under80_normal_mean, under90_normal_mean]
-            labels = ["20-39<br>(N = " + str(under40_count) + ")", "40-49<br>(N = " + str(under50_count) + ")", "50-59<br>(N = " + str(under60_count) + ")", "60-69<br>(N = " + str(under70_count) + ")", "70-79<br>(N = " + str(under80_count) + ")", "80+<br>(N = " + str(under90_count) + ")"]
+            over70_rcc_mean = rcc_o70.mean()
+            over70_normal_mean = normal_o70.mean()
+            mean_values_rcc = [ under40_rcc_mean, under50_rcc_mean, under60_rcc_mean, under70_rcc_mean, over70_rcc_mean]
+            mean_values_normal = [under40_normal_mean, under50_normal_mean, under60_normal_mean, under70_normal_mean, over70_normal_mean]
+            labels = ["20-39<br>(N = " + str(under40_count) + ")", "40-49<br>(N = " + str(under50_count) + ")", "50-59<br>(N = " + str(under60_count) + ")", "60-69<br>(N = " + str(under70_count) + ")", "70+<br>(N = " + str(over70_count) + ")"]
             fig = go.Figure()
             fig.add_trace(go.Scatter(x=labels, y=mean_values_normal, mode='lines+markers', name='Normal', line=dict(color='darkturquoise'), marker=dict(size=12)))
             fig.add_trace(go.Scatter(x=labels, y=mean_values_rcc, mode='lines+markers', name='RCC', line=dict(color='mediumpurple'), marker=dict(size=12)))
@@ -269,10 +264,8 @@ if search_pressed == True:
             normal_60 = df.loc[(df["age_at_initial_pathologic_diagnosis"] >= 50) & (df["age_at_initial_pathologic_diagnosis"] < 60) & (df["rcc"] == "normal"), cg_value].dropna()
             rcc_70 = df.loc[(df["age_at_initial_pathologic_diagnosis"] >= 60) & (df["age_at_initial_pathologic_diagnosis"] < 70) & (df["rcc"] == "rcc"), cg_value].dropna()
             normal_70 = df.loc[(df["age_at_initial_pathologic_diagnosis"] >= 60) & (df["age_at_initial_pathologic_diagnosis"] < 70) & (df["rcc"] == "normal"), cg_value].dropna()
-            rcc_80 = df.loc[(df["age_at_initial_pathologic_diagnosis"] >= 70) & (df["age_at_initial_pathologic_diagnosis"] < 80) & (df["rcc"] == "rcc"), cg_value].dropna()
-            normal_80 = df.loc[(df["age_at_initial_pathologic_diagnosis"] >= 70) & (df["age_at_initial_pathologic_diagnosis"] < 80) & (df["rcc"] == "normal"), cg_value].dropna()
-            rcc_90 = df.loc[(df["age_at_initial_pathologic_diagnosis"] >= 80) & (df["age_at_initial_pathologic_diagnosis"] < 90) & (df["rcc"] == "rcc"), cg_value].dropna()
-            normal_90 = df.loc[(df["age_at_initial_pathologic_diagnosis"] >= 80) & (df["age_at_initial_pathologic_diagnosis"] < 90) & (df["rcc"] == "normal"), cg_value].dropna()
+            rcc_o70 = df.loc[(df["age_at_initial_pathologic_diagnosis"] >= 70) & (df["rcc"] == "rcc"), cg_value].dropna()
+            normal_o70 = df.loc[(df["age_at_initial_pathologic_diagnosis"] >= 70) & (df["rcc"] == "normal"), cg_value].dropna()
             
             under40_rcc_count = (((df['age_at_initial_pathologic_diagnosis'] >= 20) & (df['age_at_initial_pathologic_diagnosis'] < 40)) & (df['rcc'] == 'rcc')).sum()
             under40_normal_count = (((df['age_at_initial_pathologic_diagnosis'] >= 20) & (df['age_at_initial_pathologic_diagnosis'] < 40)) & (df['rcc'] == 'normal')).sum()
@@ -282,10 +275,8 @@ if search_pressed == True:
             under60_normal_count = (((df['age_at_initial_pathologic_diagnosis'] >= 50) & (df['age_at_initial_pathologic_diagnosis'] < 60)) & (df['rcc'] == 'normal')).sum()
             under70_rcc_count = (((df['age_at_initial_pathologic_diagnosis'] >= 60) & (df['age_at_initial_pathologic_diagnosis'] < 70)) & (df['rcc'] == 'rcc')).sum()
             under70_normal_count = (((df['age_at_initial_pathologic_diagnosis'] >= 60) & (df['age_at_initial_pathologic_diagnosis'] < 70)) & (df['rcc'] == 'normal')).sum()
-            under80_rcc_count = (((df['age_at_initial_pathologic_diagnosis'] >= 70) & (df['age_at_initial_pathologic_diagnosis'] < 80)) & (df['rcc'] == 'rcc')).sum()
-            under80_normal_count = (((df['age_at_initial_pathologic_diagnosis'] >= 70) & (df['age_at_initial_pathologic_diagnosis'] < 80)) & (df['rcc'] == 'normal')).sum()
-            under90_rcc_count = (((df['age_at_initial_pathologic_diagnosis'] >= 80)) & (df['rcc'] == 'rcc')).sum()
-            under90_normal_count = (((df['age_at_initial_pathologic_diagnosis'] >= 80)) & (df['rcc'] == 'normal')).sum()
+            over70_rcc_count = ((df['age_at_initial_pathologic_diagnosis'] >= 70) & (df['rcc'] == 'rcc')).sum()
+            over70_normal_count = ((df['age_at_initial_pathologic_diagnosis'] >= 70) & (df['rcc'] == 'normal')).sum()
             fig = go.Figure()
             fig.add_trace(go.Box(y=df[((df['age_at_initial_pathologic_diagnosis'] >= 20) & (df['age_at_initial_pathologic_diagnosis'] < 40)) & (df['rcc'] == 'normal')][cg_value], x=[0]*under40_normal_count, boxpoints="all", jitter=0.2, marker=dict(color="darkturquoise"), showlegend=False))
             fig.add_trace(go.Box(y=df[((df['age_at_initial_pathologic_diagnosis'] >= 20) & (df['age_at_initial_pathologic_diagnosis'] < 40)) & (df['rcc'] == 'rcc')][cg_value], x=[1]*under40_rcc_count, boxpoints="all", jitter=0.2, marker=dict(color="mediumpurple"), showlegend=False))
@@ -295,10 +286,8 @@ if search_pressed == True:
             fig.add_trace(go.Box(y=df[((df['age_at_initial_pathologic_diagnosis'] >= 50) & (df['age_at_initial_pathologic_diagnosis'] < 60)) & (df['rcc'] == 'rcc')][cg_value], x=[5]*under60_rcc_count, boxpoints="all", jitter=0.2, marker=dict(color="mediumpurple"), showlegend=False))
             fig.add_trace(go.Box(y=df[((df['age_at_initial_pathologic_diagnosis'] >= 60) & (df['age_at_initial_pathologic_diagnosis'] < 70)) & (df['rcc'] == 'normal')][cg_value], x=[6]*under70_normal_count, boxpoints="all", jitter=0.2, marker=dict(color="darkturquoise"), showlegend=False))
             fig.add_trace(go.Box(y=df[((df['age_at_initial_pathologic_diagnosis'] >= 60) & (df['age_at_initial_pathologic_diagnosis'] < 70)) & (df['rcc'] == 'rcc')][cg_value], x=[7]*under70_rcc_count, boxpoints="all", jitter=0.2, marker=dict(color="mediumpurple"), showlegend=False))
-            fig.add_trace(go.Box(y=df[((df['age_at_initial_pathologic_diagnosis'] >= 70) & (df['age_at_initial_pathologic_diagnosis'] < 80)) & (df['rcc'] == 'normal')][cg_value], x=[8]*under80_normal_count, boxpoints="all", jitter=0.2, marker=dict(color="darkturquoise"), showlegend=False))
-            fig.add_trace(go.Box(y=df[((df['age_at_initial_pathologic_diagnosis'] >= 70) & (df['age_at_initial_pathologic_diagnosis'] < 80)) & (df['rcc'] == 'rcc')][cg_value], x=[9]*under80_rcc_count, boxpoints="all", jitter=0.2, marker=dict(color="mediumpurple"), showlegend=False))
-            fig.add_trace(go.Box(y=df[((df['age_at_initial_pathologic_diagnosis'] >= 80)) & (df['rcc'] == 'normal')][cg_value], x=[10]*under90_normal_count, boxpoints="all", jitter=0.2, marker=dict(color="darkturquoise"), showlegend=False))
-            fig.add_trace(go.Box(y=df[((df['age_at_initial_pathologic_diagnosis'] >= 80)) & (df['rcc'] == 'rcc')][cg_value], x=[11]*under90_rcc_count, boxpoints="all", jitter=0.2, marker=dict(color="mediumpurple"), showlegend=False))
+            fig.add_trace(go.Box(y=df[(df['age_at_initial_pathologic_diagnosis'] >= 70) & (df['rcc'] == 'normal')][cg_value], x=[8]*over70_normal_count, boxpoints="all", jitter=0.2, marker=dict(color="darkturquoise"), showlegend=False))
+            fig.add_trace(go.Box(y=df[(df['age_at_initial_pathologic_diagnosis'] >= 70) & (df['rcc'] == 'rcc')][cg_value], x=[9]*over70_rcc_count, boxpoints="all", jitter=0.2, marker=dict(color="mediumpurple"), showlegend=False))
             fig.update_layout(
                 title='age plot of ' + str(cg_value) + ' (cohorts by 10)',
                 title_font=dict(size=30),
@@ -318,10 +307,8 @@ if search_pressed == True:
                         "50-59 RCC (N = " + str(under60_rcc_count) + ")",
                         "60-69 normal (N = " + str(under70_normal_count) + ")",
                         "60-69 RCC (N = " + str(under70_rcc_count) + ")",
-                        "70-79 normal (N = " + str(under80_normal_count) + ")",
-                        "70-79 RCC (N = " + str(under80_rcc_count) + ")",
-                        "80-89 normal (N = " + str(under90_normal_count) + ")",
-                        "80-89 RCC (N = " + str(under90_rcc_count) + ")",
+                        "70+ normal (N = " + str(over70_normal_count) + ")",
+                        "70+ RCC (N = " + str(over70_rcc_count) + ")",
                     ],
                     tickfont=dict(size=16)
                 ),
@@ -358,11 +345,8 @@ if search_pressed == True:
             _, p_value_under70 = stats.mannwhitneyu(
             rcc_70, normal_70
             )
-            _, p_value_under80 = stats.mannwhitneyu(
-            rcc_80, normal_80
-            )
-            _, p_value_under90 = stats.mannwhitneyu(
-            rcc_90, normal_90
+            _, p_value_over70 = stats.mannwhitneyu(
+            rcc_o70, normal_o70
             )
             fig.add_annotation(
                 x=0.5,
@@ -429,19 +413,7 @@ if search_pressed == True:
                 y=-1.00,
                 xref='paper',
                 yref='paper',
-                text=f'70-79: {p_value_under80:.5e}' + ('*' if p_value_under80 < 0.05 else ''),
-                showarrow=False,
-                font=dict(size=22),
-                align='center',
-                xanchor='center',
-                yanchor='top'
-            )
-            fig.add_annotation(
-                x=0.5,
-                y=-1.1,
-                xref='paper',
-                yref='paper',
-                text=f'80-89: {p_value_under90:.5e}' + ('*' if p_value_under90 < 0.05 else ''),
+                text=f'70+: {p_value_over70:.5e}' + ('*' if p_value_over70 < 0.05 else ''),
                 showarrow=False,
                 font=dict(size=22),
                 align='center',
