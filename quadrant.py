@@ -12,6 +12,8 @@ pickle_path = Path(r'data/pickle_file.pk1')
 
 table = pd.read_pickle(pickle_path)
 
+st.set_page_config(page_title=None, page_icon=None, layout="wide", initial_sidebar_state="auto", menu_items=None)
+
 data = []
 data2 = []
 pospos = [0] * 100
@@ -161,11 +163,11 @@ fig2.update_traces(
 
 fig.add_traces(fig2.data)
 
-cgIDs_to_annotate = ["cg01774894", 
+cgIDs_to_annotate = ["cg03045635",
+                     "cg01774894", 
                      "cg04597433", 
                      "cg05211768", 
-                     "cg02519751", 
-                     "cg05845376", 
+                     "cg02519751",  
                      "cg07904452", 
                      "cg06385583", 
                      "cg04522310", 
