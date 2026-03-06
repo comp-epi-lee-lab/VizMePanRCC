@@ -15,7 +15,21 @@ def load_data():
     pickle_path = Path(__file__).parent / 'data' / 'pickle_file.pk1'
     return pd.read_pickle(pickle_path)
 
+
+@st.cache_data
+def load_epic():
+    epic_path = Path(__file__).parent / 'data' / 'EPIC-8v2-0_A1.sim.v6.sorted.h.tsv'
+    df = pd.read_csv(epic_path, sep='\t', usecols=['Name', 'UCSC_RefGene_Name',
+                     'Relation_to_UCSC_CpG_Island', 'GencodeV41_Group'], index_col='Name')
+    # Deduplicate semicolon-separated gene names
+    df['UCSC_RefGene_Name'] = df['UCSC_RefGene_Name'].fillna('').apply(
+        lambda x: '; '.join(dict.fromkeys(g for g in x.split(';') if g)) if x else ''
+    )
+    return df
+
+
 table = load_data()
+epic_anno = load_epic()
 
 @st.cache_data
 def compute_all_tests(subtype):
@@ -76,14 +90,20 @@ else:
 
     st.markdown(f"**{len(sig_df)} significant eoRCC markers found** | eoRCC (<50): N={n_young} | loRCC (>=50): N={n_old}")
 
-    display_df = sig_df.rename(columns={
+    annotated = sig_df.join(epic_anno, on='cpg')
+    display_df = annotated.rename(columns={
         'cpg': 'CpG ID',
         'mean_young': 'Mean eoRCC (<50)',
         'mean_old': 'Mean loRCC (>=50)',
         'mean_diff': 'Mean Diff (young - old)',
         'fdr': 'FDR p-value',
-        'p_value': 'Raw p-value'
-    })[['CpG ID', 'Mean eoRCC (<50)', 'Mean loRCC (>=50)', 'Mean Diff (young - old)', 'Raw p-value', 'FDR p-value']]
+        'p_value': 'Raw p-value',
+        'UCSC_RefGene_Name': 'Gene',
+        'Relation_to_UCSC_CpG_Island': 'CpG Island Relation',
+        'GencodeV41_Group': 'GencodeV41 Group',
+    })[['CpG ID', 'Gene', 'CpG Island Relation', 'GencodeV41 Group',
+        'Mean eoRCC (<50)', 'Mean loRCC (>=50)', 'Mean Diff (young - old)',
+        'Raw p-value', 'FDR p-value']]
     display_df = display_df.style.format({
         'Mean eoRCC (<50)': '{:.4f}',
         'Mean loRCC (>=50)': '{:.4f}',
@@ -153,7 +173,7 @@ else:
             showlegend=False
         ))
         fig_box.update_layout(
-            title=f'Box plot: {selected_cpg}',
+            title=f'RCC Samples: {selected_cpg}',
             **common_layout
         )
         fig_box.update_xaxes(showline=True, linewidth=2, linecolor='black', mirror=True)
@@ -167,33 +187,64 @@ else:
         st.plotly_chart(fig_box, use_container_width=False)
 
     with col_right:
-        fig_vio = go.Figure()
-        fig_vio.add_trace(go.Violin(
-            y=young_vals, x=[0] * len(young_vals),
-            box_visible=True, meanline_visible=True, points='all',
-            jitter=0.2,
-            fillcolor='mediumpurple', line_color='mediumpurple',
-            marker=dict(color='mediumpurple', opacity=0.6),
-            showlegend=False
-        ))
-        fig_vio.add_trace(go.Violin(
-            y=old_vals, x=[1] * len(old_vals),
-            box_visible=True, meanline_visible=True, points='all',
-            jitter=0.2,
-            fillcolor='#8977ad', line_color='#8977ad',
-            marker=dict(color='#8977ad', opacity=0.6),
-            showlegend=False
-        ))
-        fig_vio.update_layout(
-            title=f'Violin plot: {selected_cpg}',
-            **common_layout
+        if selected_subtype == 'All':
+            normal_df = table.loc[
+                (table['rcc'] != 'rcc') & table['age_at_initial_pathologic_diagnosis'].notna()
+            ]
+        else:
+            normal_df = table.loc[
+                (table['rcc'] != 'rcc') & (table['subtype'] == selected_subtype) & table['age_at_initial_pathologic_diagnosis'].notna()
+            ]
+        normal_young = normal_df.loc[normal_df['age_at_initial_pathologic_diagnosis'] < 50, selected_cpg].dropna()
+        normal_old = normal_df.loc[normal_df['age_at_initial_pathologic_diagnosis'] >= 50, selected_cpg].dropna()
+        normal_annotation_text = (
+            f'Normal (<50) mean: {normal_young.mean():.4f} | Normal (>=50) mean: {normal_old.mean():.4f}<br>'
+            f'N young={len(normal_young)} | N old={len(normal_old)}'
         )
-        fig_vio.update_xaxes(showline=True, linewidth=2, linecolor='black', mirror=True)
-        fig_vio.update_yaxes(showline=True, linewidth=2, linecolor='black', mirror=True)
-        fig_vio.add_annotation(
+        normal_layout = dict(
+            yaxis=dict(range=[0, 1.0], tickmode='linear', dtick=0.1, showgrid=False,
+                       tickfont=dict(size=18), title='<b>methylation ratio</b>',
+                       title_font=dict(size=20)),
+            xaxis=dict(
+                tickmode='array', tickvals=[0, 1],
+                ticktext=[
+                    f'Normal (<50)<br>(N={len(normal_young)})',
+                    f'Normal (>=50)<br>(N={len(normal_old)})'
+                ],
+                tickfont=dict(size=18)
+            ),
+            plot_bgcolor='rgba(0,0,0,0)',
+            font=dict(family='Arial', size=20),
+            title_font=dict(size=26),
+            margin=dict(r=20, b=260),
+            height=700,
+            width=600,
+        )
+        fig_norm = go.Figure()
+        fig_norm.add_trace(go.Box(
+            y=normal_young, x=[0] * len(normal_young),
+            boxpoints='all', jitter=0.2,
+            marker=dict(color='darkturquoise'),
+            line=dict(color='darkturquoise'),
+            showlegend=False
+        ))
+        fig_norm.add_trace(go.Box(
+            y=normal_old, x=[1] * len(normal_old),
+            boxpoints='all', jitter=0.2,
+            marker=dict(color='darkturquoise'),
+            line=dict(color='darkturquoise'),
+            showlegend=False
+        ))
+        fig_norm.update_layout(
+            title=f'Normal samples: {selected_cpg}',
+            **normal_layout
+        )
+        fig_norm.update_xaxes(showline=True, linewidth=2, linecolor='black', mirror=True)
+        fig_norm.update_yaxes(showline=True, linewidth=2, linecolor='black', mirror=True)
+        fig_norm.add_annotation(
             x=0.5, y=-0.35, xref='paper', yref='paper',
-            text=annotation_text,
+            text=normal_annotation_text,
             showarrow=False, font=dict(size=16),
             align='center', xanchor='center', yanchor='top'
         )
-        st.plotly_chart(fig_vio, use_container_width=False)
+        st.plotly_chart(fig_norm, use_container_width=False)
